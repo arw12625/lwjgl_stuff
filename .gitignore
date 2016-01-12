@@ -1,4 +1,7 @@
 nbproject/
 build/
+lib/
+res/
 *.xml
 *.mf
+*.log
