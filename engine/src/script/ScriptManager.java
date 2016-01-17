@@ -44,7 +44,7 @@ public class ScriptManager {
         eval("core = JavaImporter(Packages.game, Packages.graphics, Packages.io, Packages.resource, Packages.script, Packages.update)");
         
         //load packages
-        String[] packageNames = {"game", "geometry", "graphics", "io", "physics", "resource", "script","update", "util"};
+        String[] packageNames = {"game", "geometry", "graphics", "io", "physics", "resource", "script","sound", "update", "util"};
         for (String packageName : packageNames) {
             eval(packageName + " = JavaImporter(Packages." + packageName + ")");
         }
@@ -59,6 +59,7 @@ public class ScriptManager {
         engine.put("renderManager", graphics.RenderManager.getInstance());
         engine.put("resourceManager", resource.ResourceManager.getInstance());
         engine.put("scriptManager", this);
+        engine.put("soundManager", sound.SoundManager.getInstance());
         engine.put("updateManager", update.UpdateManager.getInstance());
         engine.put("glfwManager", io.GLFWManager.getInstance());
         setCurrentObject(null);

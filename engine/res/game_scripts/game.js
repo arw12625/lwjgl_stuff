@@ -4,6 +4,7 @@ print("Game.js Start");
 with (core) {
     var collada = JavaImporter(Packages.resource.collada);
     var ui = JavaImporter(Packages.graphics.ui);
+    //collada.ColladaModel.convertAndExport("misc_models/ter.dae", "misc_models/ter.json");
     //collada.ColladaModel.convertAndExport("misc_models/tree.dae", "misc_models/tree.json");
     //resource.WavefrontModel.convertAndExportModel("monkey", "misc_models/monkey_uv.obj", "misc_models/monkey_uv.json");
     //resource.WavefrontModel.convertAndExportModel("tree", "misc_models/tree.obj", "misc_models/tree.json");
@@ -40,6 +41,9 @@ with (core) {
         dir1.z = Math.sin(counter / 500);
     });
     
+    
+                //var obj = createSimpleRenderer("misc_models/ter.json");
+    
     var monkeys = [];
     var key = new io.KeyCallback(null, {
         invoke: function (window, key, scancode, action, mods) {
@@ -66,8 +70,7 @@ print("Game.js End");
 
 function createSimpleRenderer(path) {
     var obj = objManager.createObject();
-    var t = new geometry.Transform(obj);
     var r = graphics.JSONRenderer.createJSONRenderer(obj, path);
-    scriptManager.loadScript(obj, "game_scripts/simple_render.js");
+    //scriptManager.loadScript(obj, "game_scripts/simple_render.js");
     return obj;
 }

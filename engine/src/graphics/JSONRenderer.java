@@ -3,6 +3,7 @@ package graphics;
 import resource.JSONData;
 import game.GameObject;
 import geometry.Material;
+import geometry.Transform;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,6 +28,7 @@ import org.lwjgl.opengl.GL30;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import resource.ResourceManager;
 import resource.TextureData;
+import update.UpdateManager;
 
 /**
  *
@@ -72,10 +74,16 @@ public class JSONRenderer extends Renderable {
                     "shaders/" + jsonShaders.getJSONObject(i).getString("fragment_shader")));
         }
         JSONArray jsonMeshes = model.getJSON().getJSONArray("meshes");
+        
+        Transform t = new Transform(parent);
         for (int i = 0; i < jsonMeshes.length(); i++) {
             JSONObject obj = jsonMeshes.getJSONObject(i);
             ShaderProgram sp = shaders.get(obj.getInt("shader"));
-            meshes.add(new Mesh(sp, obj, model));
+            Mesh m = new Mesh(sp, obj, model);
+            UniformTransform ut = new UniformTransform(parent, JSONData.parseMat(obj.getString("transform")), t, m.getUniforms());
+            m.getUniforms().setUniformBuffer("lightBlock", "lightBlock");
+            UpdateManager.getInstance().add(ut);
+            meshes.add(m);
         }
     }
 
@@ -124,7 +132,7 @@ public class JSONRenderer extends Renderable {
         for (Mesh m : meshes) {
             glBindVertexArray(m.vaoHandle);
             m.sp.setUniformData(m.uniforms);
-            m.uniforms.updateUniforms();
+            RenderManager.getInstance().useShaderProgram(m.sp);
             //for now only tris are considered
             GL11.glDrawElements(GL_TRIANGLES, m.numberFaces * 3, GL_UNSIGNED_INT, 0);
         }

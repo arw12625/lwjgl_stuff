@@ -1,5 +1,6 @@
 package graphics;
 
+import io.GLFWManager;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import static org.lwjgl.opengl.GL15.glGenBuffers;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import static org.lwjgl.opengl.GL31.GL_UNIFORM_BUFFER;
 import resource.Resource;
@@ -47,34 +49,39 @@ public class RenderManager {
     }
 
     //a queue of renderables added but not yet initialize for rendering
-    Queue<Renderable> toAdd;
+    private Queue<Renderable> toAdd;
     //a list of all objects to render sorted by z-index
-    List<Renderable> renderables;
+    private List<Renderable> renderables;
     //the z-indices corresponding with the above renderables
-    List<Integer> zIndices;
+    private List<Integer> zIndices;
     
     //the viewpoint and corresponding matrices for convienince
-    Matrix4f projectionMatrix;
-    Matrix4f projectionViewMatrix;
-    ViewPoint vp;
+    private Matrix4f projectionMatrix;
+    private Matrix4f projectionViewMatrix;
+    private ViewPoint vp;
+    
+    //the last shader program used
+    private ShaderProgram shaderProgram;
 
     //a queue of textures to upload their buffers
-    Queue<TextureData> texturesToUpload;
+    private Queue<TextureData> texturesToUpload;
     //the corresponding names
-    Queue<String> texturesToUploadName;
+    private Queue<String> texturesToUploadName;
     //a map from texture name to texture handles used by opengl
-    Map<String, Integer> textureHandles;
+    private Map<String, Integer> textureHandles;
 
     public static final int MAX_LIGHTS = 16;
-    List<DirLight> lights;
+    private List<DirLight> lights;
     //the data for the uniform buffer "lightBlock"
-    ByteBuffer lightBuffer;
-    int numLights;
+    private ByteBuffer lightBuffer;
+    private int numLights;
 
     //all named opengl buffers
-    Map<String, GLBuffer> glBuffers;
+    private Map<String, GLBuffer> glBuffers;
     //a queue of buffers with data to reupload
-    Queue<GLBuffer> buffersChanged;
+    private Queue<GLBuffer> buffersChanged;
+    
+    private int resX, resY;
 
     public static final int HUD_Z_INDEX = 1000;
     public static final int DEFAULT_Z_INDEX = 0;
@@ -133,7 +140,18 @@ public class RenderManager {
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        
+        resX = GLFWManager.getInstance().getResX();
+        resY = GLFWManager.getInstance().getResY();
 
+    }
+    
+    public int getResX() {
+        return resX;
+    }
+
+    public int getResY() {
+        return resY;
     }
 
     public void render() {
@@ -228,6 +246,13 @@ public class RenderManager {
         }
     }
 
+    public void useShaderProgram(ShaderProgram sp) {
+        if(shaderProgram != sp) {
+            shaderProgram = sp;
+            sp.update();
+        }
+    }
+    
     public void bind(int textureID) {
         bind(textureID, 0);
     }

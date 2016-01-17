@@ -114,7 +114,7 @@ public class TextDisplay extends Renderable {
     public void render() {
 
         glBindVertexArray(arrayHandle);
-        ud.updateUniforms();
+            RenderManager.getInstance().useShaderProgram(sp);
         String copy = text;
         int length = copy.length();
 

@@ -17,13 +17,12 @@ import static org.lwjgl.system.MemoryUtil.*;
 /**
  *
  * @author Andrew_2
- * 
- * The interface with GLFW
- * GLFW interfaces with opengl and IO, handles opengl errors
- * GLFWManager manages the display, key, and mouse functions
- * Events handled with callbacks
- * MouseData also available with getMouseX() and getMouseY()
- * 
+ *
+ * The interface with GLFW GLFW interfaces with opengl and IO, handles opengl
+ * errors GLFWManager manages the display, key, and mouse functions Events
+ * handled with callbacks MouseData also available with getMouseX() and
+ * getMouseY()
+ *
  */
 public class GLFWManager {
 
@@ -32,18 +31,20 @@ public class GLFWManager {
     private GLFWKeyCallback keyCallback;
     private GLFWMouseButtonCallback mouseButtonCallback;
 
-    
     private ArrayList<KeyCallback> keyCallbacks;
     private ArrayList<MouseButtonCallback> mouseButtonCallbacks;
 
     private DoubleBuffer mouseXBuffer, mouseYBuffer;
     private float mouseX, mouseY;
+    private float dMouseX, dMouseY;
 
     // The window handle
     private long window;
 
-    String title = "test";
-    int width = 640, height = 480;
+    private String title = "test";
+    private int width = 640, height = 480;
+
+    private long numRefreshes;
 
     private static GLFWManager instance;
 
@@ -99,7 +100,7 @@ public class GLFWManager {
         // bindings available for use.
         //GLContext.createFromCurrent();
         GL.createCapabilities();
-        
+
         // Set the clear color
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -114,28 +115,28 @@ public class GLFWManager {
         };
         glfwSetWindowCloseCallback(window, exitCallback);
 
+        numRefreshes = 0;
         mouseButtonCallbacks = new ArrayList<>();
         mouseButtonCallback = new GLFWMouseButtonCallback() {
 
             @Override
             public void invoke(long window, int button, int action, int mods) {
                 for (int i = 0; i < mouseButtonCallbacks.size(); i++) {
-                        if (mouseButtonCallbacks.get(i).isDestroyed()) {
-                            mouseButtonCallbacks.remove(i);
-                            i--;
-                        } else if (mouseButtonCallbacks.get(i).isEnabled()) {
-                            mouseButtonCallbacks.get(i).invoke(window, button, action, mods);
-                        }
+                    if (mouseButtonCallbacks.get(i).isDestroyed()) {
+                        mouseButtonCallbacks.remove(i);
+                        i--;
+                    } else if (mouseButtonCallbacks.get(i).isEnabled()) {
+                        mouseButtonCallbacks.get(i).invoke(window, button, action, mods);
                     }
+                }
             }
         };
-        
-        
+
         mouseXBuffer = BufferUtils.createDoubleBuffer(1);
         mouseYBuffer = BufferUtils.createDoubleBuffer(1);
-        
+
         keyCallbacks = new ArrayList<>();
-        
+
         //pressing escape exits the game by default
         keyCallback = new GLFWKeyCallback() {
 
@@ -168,8 +169,17 @@ public class GLFWManager {
         glfwPollEvents();
 
         glfwGetCursorPos(window, mouseXBuffer, mouseYBuffer);
-        mouseX = (float)mouseXBuffer.get(0);
-        mouseY = (float)mouseYBuffer.get(0);
+        //ignore mouse input for a number of frames
+        float oldX = mouseX;
+        float oldY = mouseY;
+        mouseX = (float) mouseXBuffer.get(0);
+        mouseY = (float) mouseYBuffer.get(0);
+        if (numRefreshes > 20) {
+            dMouseX = mouseX - oldX;
+            dMouseY = mouseY - oldY;
+        }
+
+        numRefreshes++;
     }
 
     public void destroy() {
@@ -186,10 +196,19 @@ public class GLFWManager {
     public float getMouseX() {
         return mouseX;
     }
+
     public float getMouseY() {
         return mouseY;
     }
-    
+
+    public float getDMouseX() {
+        return dMouseX;
+    }
+
+    public float getDMouseY() {
+        return dMouseY;
+    }
+
     public long getWindow() {
         return window;
     }
@@ -215,6 +234,7 @@ public class GLFWManager {
         glfwSetCursorPos(window, 0, 0);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
+
     public void unbindCursor() {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
@@ -222,8 +242,9 @@ public class GLFWManager {
     public int getResX() {
         return width;
     }
+
     public int getResY() {
         return height;
     }
-    
+
 }

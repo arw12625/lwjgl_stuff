@@ -95,8 +95,7 @@ public class UniformData {
     }
     
     //upload changed uniforms
-    public void updateUniforms() {
-        owner.update();
+    protected void updateUniforms() {
         
         Integer index;
         while((index = uniformNew.poll()) != null) {

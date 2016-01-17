@@ -1,10 +1,10 @@
 package graphics.ui;
 
 import game.GameObject;
+import graphics.RenderManager;
 import graphics.Renderable;
 import graphics.ShaderProgram;
 import graphics.UniformData;
-import io.GLFWManager;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,10 +75,10 @@ public class FlatTexture extends Renderable {
 
     //the coordinates x,y are given in pixels and the width and height of the image are used
     public void addTexture(String name, TextureData texture, int x, int y) {
-        addTexture(name, x / GLFWManager.getInstance().getResX() * 2 - 1,
-                y / GLFWManager.getInstance().getResY() * -2 + 1,
-                texture.getImageWidth() / GLFWManager.getInstance().getResX(),
-                texture.getImageHeight() / GLFWManager.getInstance().getResY());
+        addTexture(name, x / RenderManager.getInstance().getResX() * 2 - 1,
+                y / RenderManager.getInstance().getResY() * -2 + 1,
+                texture.getImageWidth() / RenderManager.getInstance().getResX(),
+                texture.getImageHeight() / RenderManager.getInstance().getResY());
     }
 
     public void addTexture(String texture, float x, float y, float width, float height) {
@@ -139,7 +139,7 @@ public class FlatTexture extends Renderable {
                 String texName = textures.get(i);
                 if(!texName.equals(lastTex)) {
                     ud.setTexture("tex", texName);
-                    ud.updateUniforms();
+                    RenderManager.getInstance().useShaderProgram(sp);
                     lastTex = texName;
                 }
                 glDrawArrays(GL_QUADS, i * 4, 4);

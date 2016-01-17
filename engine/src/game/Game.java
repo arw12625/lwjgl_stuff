@@ -4,6 +4,7 @@ import io.GLFWManager;
 import graphics.RenderManager;
 import resource.ResourceManager;
 import script.ScriptManager;
+import sound.SoundManager;
 import update.UpdateManager;
 
 /**
@@ -24,6 +25,7 @@ public class Game {
     public RenderManager renderManager;
     public ResourceManager resourceManager;
     public ScriptManager scriptManager;
+    public SoundManager soundManager;
     
     private boolean requestQuit = false;
     private boolean initializing = true;
@@ -49,6 +51,7 @@ public class Game {
         resourceManager.start();
         this.renderManager = RenderManager.getInstance();
         this.scriptManager = ScriptManager.getInstance();
+        this.soundManager = SoundManager.getInstance();
     }
     
     public void run() {
@@ -61,6 +64,7 @@ public class Game {
     }
 
     private void close() {
+        soundManager.destroy();
         resourceManager.destroy();
         updateManager.destroy();
         glfwManager.destroy();

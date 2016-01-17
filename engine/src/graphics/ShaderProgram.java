@@ -121,6 +121,7 @@ public class ShaderProgram {
 
     protected void update() {
         glUseProgram(getProgram());
+        uniformData.updateUniforms();
         String blockName;
         while((blockName = blockNamesNew.poll()) != null) {
             String bufferName = bufferNames.get(blockName);

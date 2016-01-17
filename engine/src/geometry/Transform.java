@@ -5,6 +5,7 @@ import game.GameObject;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Quaternionf;
+import org.joml.Vector4f;
 
 /**
  *
@@ -85,4 +86,17 @@ public class Transform extends Component {
         transform.setTranslation(position);
         return transform;
     }
+    
+    public static Transform getTransform(GameObject parent, Matrix4f mat) {
+        
+        Vector4f pos4 = new Vector4f();
+        mat.getColumn(3, pos4);
+        Vector3f pos3 = new Vector3f(pos4.x, pos4.y, pos4.z);
+        
+        Quaternionf orientation = new Quaternionf();
+        mat.get(orientation);
+        
+        return new Transform(parent, pos3, orientation);
+    }
+    
 }

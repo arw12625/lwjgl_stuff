@@ -30,15 +30,20 @@ new KeyCallbackExtender(obj, {
 
 glfwManager.bindCursor();
 
-
+var mx = 0;
+var my = 0;
 addUpdate(function(delta) {
     vp.moveLocalCoords(speed*x,speed*y,speed*z);
-    var my = glfwManager.getMouseX()*mouseSpeedX;
-    var mx = glfwManager.getMouseY()*mouseSpeedY;
+    var dy = glfwManager.getDMouseX()*mouseSpeedX;
+    var dx = glfwManager.getDMouseY()*mouseSpeedY;
+    mx+=dx;
+    my+=dy;
     if(mx > Math.PI / 2) {
         mx = Math.PI / 2;
     } if(mx < -Math.PI / 2) {
         mx = -Math.PI / 2;
     }
     vp.setYXAngle(mx, my);
+    
+    soundManager.setListenerPosition(vp.getPosition());
 });
