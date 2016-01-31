@@ -20,6 +20,9 @@ public class ScriptTestNash {
         engine.eval("a = new Packages.update.Action(function(arg) {print(arg[0]);});");
         engine.eval("a.act(7);");
         
+        Object obj = engine.eval("(function() {return {  x : 1, y :1}})()");
+        System.out.println(obj);
+        
 
     }
 }

@@ -27,7 +27,7 @@ public class GameTest {
                 GameObject scene = Game.getInstance().gameOjbectManager.createObject();
                 ScriptManager.getInstance().loadScript(scene, "game_scripts/game.js");
                 ScriptManager.getInstance().loadScript(scene, "game_scripts/viewpoint.js");
-                ScriptManager.getInstance().loadScript(scene, "game_scripts/sound_test.js");
+                //ScriptManager.getInstance().loadScript(scene, "game_scripts/sound_test.js");
                 finished = true;
             }
 

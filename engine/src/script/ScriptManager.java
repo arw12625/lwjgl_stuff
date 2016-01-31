@@ -50,6 +50,9 @@ public class ScriptManager {
         }
         eval("joml = JavaImporter(Packages.org.joml)");
         
+        eval("ui = JavaImporter(Packages.graphics.ui)");
+        eval("collada = JavaImporter(Packages.resource.collada)");
+        
         eval("GLFW = JavaImporter(org.lwjgl.glfw).GLFW;");
         eval("KeyCallbackExtender = Java.extend(Java.type(\"io.KeyCallback\"));");
         
@@ -120,13 +123,8 @@ public class ScriptManager {
         return createScript(parent, TextData.loadText(path));
     }
 
-    public Object runScriptObjectMethod(GameScript s, String func, Object[] args) {
-        try {
+    public Object runScriptObjectMethod(GameScript s, String func, Object... args) throws ScriptException, NoSuchMethodException {
             return inv.invokeMethod(s.getScriptObject(), func, args);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     /* add basic functionality to each script

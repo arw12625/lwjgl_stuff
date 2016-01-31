@@ -1,12 +1,15 @@
 package io;
 
 import game.Game;
+import graphics.ui.Console;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.lwjgl.BufferUtils;
 
 import static org.lwjgl.glfw.Callbacks.*;
@@ -28,11 +31,13 @@ public class GLFWManager {
 
     private GLFWErrorCallback errorCallback;
     private GLFWWindowCloseCallback exitCallback;
-    private GLFWKeyCallback keyCallback;
-    private GLFWMouseButtonCallback mouseButtonCallback;
+    private GLFWKeyCallback glfwKeyCallback;
+    private GLFWMouseButtonCallback glfwMouseButtonCallback;
 
-    private ArrayList<KeyCallback> keyCallbacks;
-    private ArrayList<MouseButtonCallback> mouseButtonCallbacks;
+    private List<KeyCallback> keyCallbacks;
+    private List<MouseButtonCallback> mouseButtonCallbacks;
+    
+    private TextInput defaultTextInput;
 
     private DoubleBuffer mouseXBuffer, mouseYBuffer;
     private float mouseX, mouseY;
@@ -56,6 +61,59 @@ public class GLFWManager {
     }
 
     private GLFWManager() {
+        setupWindow();
+        
+        numRefreshes = 0;
+        mouseButtonCallbacks =  new CopyOnWriteArrayList<>();
+        glfwMouseButtonCallback = new GLFWMouseButtonCallback() {
+
+            @Override
+            public void invoke(long window, int button, int action, int mods) {
+                for(MouseButtonCallback mbcb : mouseButtonCallbacks) {
+                    if(mbcb.isDestroyed()) {
+                        mouseButtonCallbacks.remove(mbcb);
+                    } else if(mbcb.isEnabled() ) {
+                        mbcb.invoke(window, button, action, mods);
+                    }
+                }
+            }
+        };
+
+        mouseXBuffer = BufferUtils.createDoubleBuffer(1);
+        mouseYBuffer = BufferUtils.createDoubleBuffer(1);
+
+        
+        
+        keyCallbacks = new CopyOnWriteArrayList<>();
+        //pressing escape exits the game by default
+        glfwKeyCallback = new GLFWKeyCallback() {
+
+            @Override
+            public void invoke(long window, int key, int scancode, int action, int mods) {
+                if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+                    Game.getInstance().requestQuit();
+                } else {
+                    for(KeyCallback kcb : keyCallbacks) {
+                        if(kcb.isDestroyed()) {
+                            keyCallbacks.remove(kcb);
+                        } else if(kcb.isEnabled()) {
+                            kcb.invoke(window, key, scancode, action, mods);
+                        }
+                    }
+                }
+
+            }
+        };
+        glfwSetKeyCallback(window, glfwKeyCallback);
+        
+        defaultTextInput = new TextInput(null);
+        addKeyCallback(defaultTextInput);
+        
+    }
+    
+    //Initialize the GLFWWindow
+    private void setupWindow() {
+        
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
         glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
@@ -114,51 +172,6 @@ public class GLFWManager {
             }
         };
         glfwSetWindowCloseCallback(window, exitCallback);
-
-        numRefreshes = 0;
-        mouseButtonCallbacks = new ArrayList<>();
-        mouseButtonCallback = new GLFWMouseButtonCallback() {
-
-            @Override
-            public void invoke(long window, int button, int action, int mods) {
-                for (int i = 0; i < mouseButtonCallbacks.size(); i++) {
-                    if (mouseButtonCallbacks.get(i).isDestroyed()) {
-                        mouseButtonCallbacks.remove(i);
-                        i--;
-                    } else if (mouseButtonCallbacks.get(i).isEnabled()) {
-                        mouseButtonCallbacks.get(i).invoke(window, button, action, mods);
-                    }
-                }
-            }
-        };
-
-        mouseXBuffer = BufferUtils.createDoubleBuffer(1);
-        mouseYBuffer = BufferUtils.createDoubleBuffer(1);
-
-        keyCallbacks = new ArrayList<>();
-
-        //pressing escape exits the game by default
-        keyCallback = new GLFWKeyCallback() {
-
-            @Override
-            public void invoke(long window, int key, int scancode, int action, int mods) {
-                if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-                    Game.getInstance().requestQuit();
-                } else {
-                    for (int i = 0; i < keyCallbacks.size(); i++) {
-                        if (keyCallbacks.get(i).isDestroyed()) {
-                            keyCallbacks.remove(i);
-                            i--;
-                        } else if (keyCallbacks.get(i).isEnabled()) {
-                            keyCallbacks.get(i).invoke(window, key, scancode, action, mods);
-                        }
-                    }
-                }
-
-            }
-        };
-        glfwSetKeyCallback(window, keyCallback);
-
     }
 
     //update the frame and mouse data, called each frame by the main thread
@@ -229,7 +242,14 @@ public class GLFWManager {
     public void removeKeyCallback(KeyCallback call) {
         keyCallbacks.remove(call);
     }
+    public void addMouseButtonCallback(MouseButtonCallback call) {
+        mouseButtonCallbacks.add(call);
+    }
 
+    public void removeMouseButton(MouseButtonCallback call) {
+        mouseButtonCallbacks.remove(call);
+    }
+    
     public void bindCursor() {
         glfwSetCursorPos(window, 0, 0);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -245,6 +265,10 @@ public class GLFWManager {
 
     public int getResY() {
         return height;
+    }
+
+    public TextInput getDefaultTextInput() {
+        return defaultTextInput;
     }
 
 }

@@ -11,7 +11,7 @@ import update.Updateable;
  *
  * @author Andrew_2
  */
-public class UniformTransform extends Component implements Updateable {
+public class UniformTransform extends UniformStruct {
 
     Matrix4f initTrans;
     Transform t;
@@ -20,8 +20,8 @@ public class UniformTransform extends Component implements Updateable {
     Matrix4f pvmMat, viewMat;
     Matrix3f normalMat;
     
-    public UniformTransform(GameObject parent, Matrix4f initTrans, Transform t, UniformData ud) {
-        super(parent);
+    public UniformTransform(UniformData ud, Matrix4f initTrans, Transform t) {
+        super(ud);
         this.t = t;
         this.ud = ud;
         this.initTrans = initTrans;
@@ -33,10 +33,9 @@ public class UniformTransform extends Component implements Updateable {
         viewMat = new Matrix4f();
         normalMat = new Matrix3f();
     }
-
+    
     @Override
-    public void update(int delta) {
-        
+    public void updateUniformStruct() {
         Matrix4f transMat = t.toMatrix();
         transMat.mul(initTrans);
         RenderManager.getInstance().getProjectionViewMatrix().mul(transMat, pvmMat);

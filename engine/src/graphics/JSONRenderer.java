@@ -80,9 +80,8 @@ public class JSONRenderer extends Renderable {
             JSONObject obj = jsonMeshes.getJSONObject(i);
             ShaderProgram sp = shaders.get(obj.getInt("shader"));
             Mesh m = new Mesh(sp, obj, model);
-            UniformTransform ut = new UniformTransform(parent, JSONData.parseMat(obj.getString("transform")), t, m.getUniforms());
+            UniformTransform ut = new UniformTransform(m.getUniforms(), JSONData.parseMat(obj.getString("transform")), t);
             m.getUniforms().setUniformBuffer("lightBlock", "lightBlock");
-            UpdateManager.getInstance().add(ut);
             meshes.add(m);
         }
     }

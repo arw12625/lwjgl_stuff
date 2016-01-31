@@ -40,6 +40,8 @@ public class UniformData {
 
     //the current set of texture units and the name of textures bound to them
     private Map<Integer, String> textureMap;
+    
+    private List<UniformStruct> structs;
 
     private int currentSize;
     private int bufferSize;
@@ -61,6 +63,8 @@ public class UniformData {
         uniformBlocks = new ArrayList<>();
 
         textureMap = new HashMap<>();
+        
+        structs = new ArrayList<>();
         
         currentSize = 0;
         data = BufferUtils.createByteBuffer(bufferSize);
@@ -85,6 +89,10 @@ public class UniformData {
         }
         return index;
     }
+    
+    protected void addStruct(UniformStruct str) {
+        structs.add(str);
+    }
 
     //mark all uniforms as changed
     protected void updateAll() {
@@ -96,6 +104,10 @@ public class UniformData {
     
     //upload changed uniforms
     protected void updateUniforms() {
+        
+        for(int i = 0; i < structs.size(); i++) {
+            structs.get(i).updateUniformStruct();
+        }
         
         Integer index;
         while((index = uniformNew.poll()) != null) {

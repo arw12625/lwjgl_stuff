@@ -1,4 +1,3 @@
-
 package graphics.ui;
 
 import game.GameObject;
@@ -33,24 +32,26 @@ import resource.TextureData;
 /**
  *
  * @author Andrew_2
- * 
+ *
  * TextDisplay allows the rendering of text with various fonts using the STB lib
- * Displayed on top of the frame or according to a z-index
- * Displayed in a rectangular area
- * 
+ * Displayed on top of the frame or according to a z-index Displayed in a
+ * rectangular area
+ *
  */
 public class TextDisplay extends Renderable {
 
-    private String text;
+    private StringBuilder text;
     private boolean changed;
     private Font f;
-    //normalized coordinates
+    //pixel coordinates
     private float x, y;
-    //the number of characters wide and high allowed
-    //new line added when charWidth is reached
-    private int charWidth, charHeight;
+    //the number of pixels wide the display can use
+    //new line added when width is reached
+    private float width, height;
     private FloatBuffer xPos, yPos;
     private STBTTAlignedQuad quad;
+
+    private int charNum;
 
     private int capacity;
     private int arrayHandle;
@@ -59,23 +60,26 @@ public class TextDisplay extends Renderable {
     private UniformData ud;
     private ByteBuffer buffer;
 
-    static final int MAX_NUMBER = 100;
+    private float lineSpacing;
+    private float characterSpacing;
+            
+    static final int defaultCapacity = 100;
     static final int NUM_BYTES = (2 + 2) * 4 * Float.BYTES;
 
-    public TextDisplay(GameObject parent, Font f, float x, float y, int charWidth, int charHeight) {
-        this(parent, f, x, y, charWidth, charHeight, charWidth * charHeight);
-    }
+    public TextDisplay(GameObject parent, Font f, float x, float y, float width, float height, int capacity) {
 
-    public TextDisplay(GameObject parent, Font f, float x, float y, int charWidth, int charHeight, int capacity) {
         super(parent);
         this.f = f;
         this.x = x;
         this.y = y;
-        this.charWidth = charWidth;
-        this.charHeight = charHeight;
+        this.width = width;
+        this.height = height;
         this.capacity = capacity;
+
+        lineSpacing = 0;
+        characterSpacing = 0;
         
-        text = "";
+        text = new StringBuilder();
         changed = false;
         xPos = BufferUtils.createFloatBuffer(1);
         yPos = BufferUtils.createFloatBuffer(1);
@@ -98,7 +102,7 @@ public class TextDisplay extends Renderable {
         glBindVertexArray(arrayHandle);
         bufferHandle = glGenBuffers();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferHandle);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, capacity * NUM_BYTES, GL_DYNAMIC_DRAW);
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, capacity * NUM_BYTES, GL15.GL_STREAM_DRAW);
 
         int vertexLocation = glGetAttribLocation(sp.getProgram(), "vertex_position");
         glEnableVertexAttribArray(vertexLocation);
@@ -114,68 +118,115 @@ public class TextDisplay extends Renderable {
     public void render() {
 
         glBindVertexArray(arrayHandle);
-            RenderManager.getInstance().useShaderProgram(sp);
-        String copy = text;
-        int length = copy.length();
+        RenderManager.getInstance().useShaderProgram(sp);
 
-        float xRes = GLFWManager.getInstance().getResX();
-        float yRes = GLFWManager.getInstance().getResY();
-        xPos.put(0, x * xRes);
-        yPos.put(0, y * yRes);
-        int lineNum = 0;
-        int charNum = 0;
-        
-        
         //if the text has changed, all characters are recalculated
         if (changed) {
+            String copy = text.toString();
+            int length = copy.length();
+
+            float xRes = GLFWManager.getInstance().getResX();
+            float yRes = GLFWManager.getInstance().getResY();
+            xPos.put(0, x);
+            yPos.put(0, y);
+            
+            charNum = 0;
             buffer.rewind();
-            for (int i = 0; i < length; i++) {
-                char c = copy.charAt(i);
-                if (c == '\n' || charNum == charWidth) {
-                    lineNum++;
-                    charNum = 0;
-                    yPos.put(0, y * yRes + lineNum * (f.fontSize + 4));
-                    xPos.put(0, x * xRes);
-                    continue;
-                } else if (c < 32 || 128 <= c) {
-                    c = ' ';
+            int i = 0;
+            boolean newLine = false;
+            while (i < length) {
+                if (newLine) {
+                    xPos.put(0, x);
+                    yPos.put(0, yPos.get(0) + f.fontSize + lineSpacing);
+                    newLine = false;
+
                 }
-                charNum++;
+                char c = copy.charAt(i);
+                if (c == '\n') {
+                    i++;
+                    newLine = true;
+                    continue;
+                }
+                if (c < 32 || 128 <= c) {
+                    System.err.println("unrecongnized character " + c);
+                    i++;
+                    continue;
+                }
 
                 STBTruetype.stbtt_GetBakedQuad(f.cdata, f.tex.getImageWidth(), f.tex.getImageHeight(), c - 32, xPos, yPos, quad, 1);
-
-                buffer.putFloat(quad.x0() / xRes).putFloat(-quad.y0() / yRes).putFloat(quad.s0()).putFloat(quad.t0());
-                buffer.putFloat(quad.x0() / xRes).putFloat(-quad.y1() / yRes).putFloat(quad.s0()).putFloat(quad.t1());
-                buffer.putFloat(quad.x1() / xRes).putFloat(-quad.y1() / yRes).putFloat(quad.s1()).putFloat(quad.t1());
-                buffer.putFloat(quad.x1() / xRes).putFloat(-quad.y0() / yRes).putFloat(quad.s1()).putFloat(quad.t0());
+                float currentWidth = quad.x1() - x;
+                float currentHeight = quad.y1() - y;
+                if (currentHeight > height) {
+                    break;
+                }
+                if (currentWidth > width) {
+                    newLine = true;
+                    continue;
+                }
+                float newX0 = quad.x0() / xRes * 2 - 1f;
+                float newX1 = quad.x1() / xRes * 2 - 1f;
+                float newY0 = -quad.y0() / yRes * 2 + 1f;
+                float newY1 = -quad.y1() / yRes * 2 + 1f;
+                buffer.putFloat(newX0).putFloat(newY0).putFloat(quad.s0()).putFloat(quad.t0());
+                buffer.putFloat(newX0).putFloat(newY1).putFloat(quad.s0()).putFloat(quad.t1());
+                buffer.putFloat(newX1).putFloat(newY1).putFloat(quad.s1()).putFloat(quad.t1());
+                buffer.putFloat(newX1).putFloat(newY0).putFloat(quad.s1()).putFloat(quad.t0());
+                
+                xPos.put(0, xPos.get(0) + characterSpacing);
+                i++;
+                charNum++;
             }
 
             buffer.rewind();
 
             glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferHandle);
-            GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, NUM_BYTES * length, buffer);
+            GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, buffer.capacity(), buffer);
             changed = false;
         }
 
-        glDrawArrays(GL_QUADS, 0, length * 4);
+        glDrawArrays(GL_QUADS, 0, charNum * 4);
+    }
+
+    @Override
+    public String toString() {
+        return getText();
+    }
+
+    public String getText() {
+        return text.toString();
     }
 
     public void setText(String text) {
-        this.text = text;
+        this.text.setLength(0);
+        this.text.append(text);
+        changed = true;
+    }
+
+    public void pushChar(char c) {
+        text.append(c);
+        changed = true;
+    }
+
+    public void popChar() {
+        if (text.length() != 0) {
+            text.deleteCharAt(text.length() - 1);
+
+        }
         changed = true;
     }
 
     public static TextDisplay createTextDisplay(int fontSize) {
-        return createTextDisplay("fonts/arial.ttf", fontSize, 10, 2);
+        return createTextDisplay("fonts/arial.ttf", fontSize, 200, 200);
     }
 
-    public static TextDisplay createTextDisplay(String fontPath, int fontSize, int charWidth, int charHeight) {
-        return createTextDisplay(fontPath, fontSize, charWidth, charHeight, -1f, -.9f);
+    public static TextDisplay createTextDisplay(String fontPath, int fontSize, float width, float height) {
+        return createTextDisplay(fontPath, fontSize, width, height, 20, 20, defaultCapacity);
     }
-    public static TextDisplay createTextDisplay(String fontPath, int fontSize, int charWidth, int charHeight, float x, float y) {
+
+    public static TextDisplay createTextDisplay(String fontPath, int fontSize, float width, float height, float x, float y, int capacity) {
         ByteBuffer b = ResourceManager.getInstance().loadResource(fontPath, new BufferData()).getData().getData();
         Font f = new Font(fontPath, b, fontSize);
-        TextDisplay td = new TextDisplay(null, f, x, y, charWidth, charHeight);
+        TextDisplay td = new TextDisplay(null, f, x, y, width, height, capacity);
         RenderManager.getInstance().add(td);
         return td;
     }
@@ -203,8 +254,9 @@ public class TextDisplay extends Renderable {
         }
 
         public Font(String name, ByteBuffer fontTTF, int fontSize, int bitMapWidth, int bitMapHeight) {
-            this(name, fontTTF, fontSize, bitMapWidth, bitMapHeight, new Vector4f(0,0,0,1));
+            this(name, fontTTF, fontSize, bitMapWidth, bitMapHeight, new Vector4f(0, 0, 0, 1));
         }
+
         public Font(String name, ByteBuffer fontTTF, int fontSize, int bitMapWidth, int bitMapHeight, Vector4f color) {
             this.name = name;
             this.fontSize = fontSize;

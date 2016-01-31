@@ -12,7 +12,6 @@ import game.GameObject;
 public abstract class KeyCallback extends Component {
     public KeyCallback(GameObject parent) {
         super(parent);
-        GLFWManager.getInstance().addKeyCallback(this);
     }
     public abstract void invoke(long window, int key, int scancode, int action, int mods);
 }

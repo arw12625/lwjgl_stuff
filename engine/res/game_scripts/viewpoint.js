@@ -6,7 +6,7 @@ var mouseSpeedX = -0.01;
 var mouseSpeedY = -0.01;
 var vp = renderManager.getViewPoint();
 
-new KeyCallbackExtender(obj, {
+var keys = new KeyCallbackExtender(obj, {
         invoke: function(window, key, scancode, action, mods) {
             var mul = 0;
             if(action == GLFW.GLFW_PRESS || action == GLFW.GLFW_REPEAT) {
@@ -27,6 +27,7 @@ new KeyCallbackExtender(obj, {
             }
         }
 });
+glfwManager.addKeyCallback(keys);
 
 glfwManager.bindCursor();
 

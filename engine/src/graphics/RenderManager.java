@@ -70,21 +70,18 @@ public class RenderManager {
     //a map from texture name to texture handles used by opengl
     private Map<String, Integer> textureHandles;
 
-    public static final int MAX_LIGHTS = 16;
-    private List<DirLight> lights;
-    //the data for the uniform buffer "lightBlock"
-    private ByteBuffer lightBuffer;
-    private int numLights;
-
     //all named opengl buffers
     private Map<String, GLBuffer> glBuffers;
     //a queue of buffers with data to reupload
     private Queue<GLBuffer> buffersChanged;
+    //a queue of buffers with data to release
+    private Queue<GLBuffer> buffersToRelease;
     
     private int resX, resY;
 
     public static final int HUD_Z_INDEX = 1000;
     public static final int DEFAULT_Z_INDEX = 0;
+    public static final int PRE_RENDER_Z_INDEX = -1000;
 
     public static class GLBuffer {
 
@@ -109,9 +106,6 @@ public class RenderManager {
         projectionMatrix.identity();
         projectionViewMatrix = new Matrix4f();
         projectionViewMatrix.identity();
-        lights = new ArrayList<>();
-        lightBuffer = BufferUtils.createByteBuffer(4 * 4 * 4 * MAX_LIGHTS + 4 * 4); //lights + header
-        numLights = 0;
 
         texturesToUpload = new ConcurrentLinkedQueue<>();
         texturesToUploadName = new ConcurrentLinkedQueue<>();
@@ -119,14 +113,13 @@ public class RenderManager {
 
         glBuffers = new HashMap<>();
         buffersChanged = new ConcurrentLinkedQueue<>();
+        buffersToRelease = new ConcurrentLinkedQueue<>();
 
         Quaternionf q = new Quaternionf();
         q.set(new AxisAngle4f(0, 0, 0, 1));
         vp = new ViewPoint(new Vector3f(0, 0, 10), q);
         //setOrthographicProjection(16, 12, -.1f, -10);
         setPespectiveProjection(3.14f / 3, 1.333f, .1f, 100);
-
-        createBuffer("lightBlock", lightBuffer, true);
 
         
         //opengl settings
@@ -156,16 +149,8 @@ public class RenderManager {
 
     public void render() {
         prepareTextures();
-        updateLights();
-        GLBuffer buf;
-        while ((buf = buffersChanged.poll()) != null) {
-            if (buf.bufferHandle == -1) {
-                buf.bufferHandle = glGenBuffers();
-            }
-            GL15.glBindBuffer(GL_UNIFORM_BUFFER, buf.bufferHandle);
-            GL15.glBufferData(GL_UNIFORM_BUFFER, buf.data.capacity(), buf.data,
-                    buf.dynamic ? GL15.GL_DYNAMIC_DRAW : GL15.GL_STATIC_DRAW);
-        }
+        updateViewMat();
+        updateBuffers();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
@@ -246,6 +231,7 @@ public class RenderManager {
         }
     }
 
+    //must be called in a thread with opengl context
     public void useShaderProgram(ShaderProgram sp) {
         if(shaderProgram != sp) {
             shaderProgram = sp;
@@ -273,6 +259,10 @@ public class RenderManager {
     public int getTextureHandle(String name) {
         return textureHandles.getOrDefault(name, 0);
     }
+    
+    public void updateViewMat() {
+        projectionMatrix.mul(vp.getViewMatrix(), projectionViewMatrix);
+    }
 
     public void setOrthographicProjection(float width, float height, float near, float far) {
         projectionMatrix.set(2 / width, 0, 0, 0,
@@ -296,7 +286,6 @@ public class RenderManager {
     }
 
     public Matrix4f getProjectionViewMatrix() {
-        projectionMatrix.mul(vp.getViewMatrix(), projectionViewMatrix);
         return projectionViewMatrix;
     }
 
@@ -304,11 +293,37 @@ public class RenderManager {
         return vp.getViewMatrix();
     }
 
+    private void updateBuffers() {
+        GLBuffer buf;
+        while ((buf = buffersChanged.poll()) != null) {
+            if (buf.bufferHandle == -1) {
+                buf.bufferHandle = glGenBuffers();
+            }
+            GL15.glBindBuffer(GL_UNIFORM_BUFFER, buf.bufferHandle);
+            GL15.glBufferData(GL_UNIFORM_BUFFER, buf.data.capacity(), buf.data,
+                    buf.dynamic ? GL15.GL_DYNAMIC_DRAW : GL15.GL_STATIC_DRAW);
+        }
+        while ((buf = buffersToRelease.poll()) != null) {
+            GL15.glDeleteBuffers(buf.bufferHandle);
+        }
+    }
+    
     public void createBuffer(String name, ByteBuffer data, boolean dynamic) {
         if (!glBuffers.containsKey(name)) {
             GLBuffer buf = new GLBuffer(name, dynamic);
             glBuffers.put(name, buf);
             setUniformBuffer(name, data);
+        } else {
+            System.err.println("buffer already created " + name);
+        }
+    }
+    
+    public void releaseBuffer(String name) {
+        if(glBuffers.containsKey(name)) {
+            GLBuffer buf = glBuffers.remove(name);
+            buffersToRelease.add(buf);
+        }  else {
+            System.err.println("no such buffer: " + name);
         }
     }
 
@@ -331,37 +346,6 @@ public class RenderManager {
             System.err.println("no such buffer: " + name);
             return -1;
         }
-    }
-
-    public void updateLights() {
-        lightBuffer.rewind();
-        lightBuffer.putInt(numLights).putInt(0).putInt(0).putInt(0);
-        for (int i = 0; i < numLights; i++) {
-            Vector4f newDir = new Vector4f(lights.get(i).dir, 0);
-            getViewMatrix().transform(newDir);
-            putVector4f(lightBuffer, newDir);
-            putVector3f(lightBuffer, lights.get(i).ambient);
-            lightBuffer.putFloat(0);
-            putVector3f(lightBuffer, lights.get(i).diffuse);
-            lightBuffer.putFloat(0);
-            putVector3f(lightBuffer, lights.get(i).specular);
-            lightBuffer.putFloat(0);
-        }
-        lightBuffer.rewind();
-        setUniformBuffer("lightBlock", lightBuffer);
-    }
-
-    public static void putVector4f(ByteBuffer b, Vector4f v) {
-        b.putFloat(v.x).putFloat(v.y).putFloat(v.z).putFloat(v.w);
-    }
-
-    public static void putVector3f(ByteBuffer b, Vector3f v) {
-        b.putFloat(v.x).putFloat(v.y).putFloat(v.z);
-    }
-
-    public void addLight(DirLight d) {
-        numLights++;
-        lights.add(d);
     }
 
     public static GLTYPE parseGLType(String type) {
