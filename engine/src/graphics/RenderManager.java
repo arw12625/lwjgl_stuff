@@ -233,10 +233,8 @@ public class RenderManager {
 
     //must be called in a thread with opengl context
     public void useShaderProgram(ShaderProgram sp) {
-        if(shaderProgram != sp) {
-            shaderProgram = sp;
-            sp.update();
-        }
+        shaderProgram = sp;
+        sp.update();
     }
     
     public void bind(int textureID) {

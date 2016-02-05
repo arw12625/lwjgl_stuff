@@ -1,7 +1,6 @@
 package io;
 
 import game.Component;
-import game.GameObject;
 
 /**
  *
@@ -9,7 +8,7 @@ import game.GameObject;
  */
 public abstract class TextCallback extends Component {
 
-    public TextCallback(GameObject parent) {
+    public TextCallback(Component parent) {
         super(parent);
     }
     

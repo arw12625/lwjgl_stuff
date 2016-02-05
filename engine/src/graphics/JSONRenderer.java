@@ -1,7 +1,7 @@
 package graphics;
 
+import game.Component;
 import resource.JSONData;
-import game.GameObject;
 import geometry.Material;
 import geometry.Transform;
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public class JSONRenderer extends Renderable {
     private List<Mesh> meshes;
     private List<ShaderProgram> shaders;
 
-    public JSONRenderer(GameObject parent, JSONData model) {
+    public JSONRenderer(Component parent, JSONData model) {
         super(parent);
         this.model = model;
         materials = new HashMap<>();
@@ -80,7 +80,8 @@ public class JSONRenderer extends Renderable {
             JSONObject obj = jsonMeshes.getJSONObject(i);
             ShaderProgram sp = shaders.get(obj.getInt("shader"));
             Mesh m = new Mesh(sp, obj, model);
-            UniformTransform ut = new UniformTransform(m.getUniforms(), JSONData.parseMat(obj.getString("transform")), t);
+            UniformTransform ut = new UniformTransform(JSONData.parseMat(obj.getString("transform")), t);
+            m.getUniforms().addStruct(ut);
             m.getUniforms().setUniformBuffer("lightBlock", "lightBlock");
             meshes.add(m);
         }
@@ -145,7 +146,7 @@ public class JSONRenderer extends Renderable {
         return meshes;
     }
 
-    public static JSONRenderer createJSONRenderer(GameObject parent, String path) {
+    public static JSONRenderer createJSONRenderer(Component parent, String path) {
         JSONRenderer r = new JSONRenderer(parent, ResourceManager.getInstance().loadResource(path, new JSONData()).getData());
         RenderManager.getInstance().add(r);
         return r;

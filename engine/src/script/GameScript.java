@@ -1,7 +1,6 @@
 package script;
 
 import game.Component;
-import game.GameObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +22,7 @@ public class GameScript extends Component implements Updateable {
     private Map<Class, Object> interfaces;
     private List<Updateable> updates;
     
-    protected GameScript(GameObject parent, String script) {
+    protected GameScript(Component parent, String script) {
         super(parent);
         this.script = script;
         interfaces = new HashMap<>();

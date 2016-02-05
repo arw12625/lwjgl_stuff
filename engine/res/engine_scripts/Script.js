@@ -14,7 +14,3 @@ exit = function() {
 };
 
 
-waitUntilLoaded = function(res) {
-    script.ScriptUtil.waitUntilLoaded(res);
-}
-

@@ -1,7 +1,6 @@
 package geometry;
 
 import game.Component;
-import game.GameObject;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Quaternionf;
@@ -34,19 +33,19 @@ public class Transform extends Component {
     public Transform(Vector3f position, Quaternionf orientation) {
         this(null, position, orientation);
     }
-    public Transform(GameObject parent) {
+    public Transform(Component parent) {
         this(parent, new Vector3f());
     }
-    public Transform(GameObject parent, Quaternionf orientation) {
+    public Transform(Component parent, Quaternionf orientation) {
         this(parent, new Vector3f(), orientation);
     }
-    public Transform(GameObject parent, Vector3f position) {
+    public Transform(Component parent, Vector3f position) {
         this(parent, position, new Quaternionf());
     }
-    public Transform(GameObject parent, Transform t) {
+    public Transform(Component parent, Transform t) {
         this(parent, t.getPosition(), t.getOrientation());
     }
-    public Transform(GameObject parent, Vector3f position, Quaternionf orientation) {
+    public Transform(Component parent, Vector3f position, Quaternionf orientation) {
         super(parent);
         this.position = position;
         this.orientation = orientation;
@@ -87,7 +86,7 @@ public class Transform extends Component {
         return transform;
     }
     
-    public static Transform getTransform(GameObject parent, Matrix4f mat) {
+    public static Transform createTransform(Component parent, Matrix4f mat) {
         
         Vector4f pos4 = new Vector4f();
         mat.getColumn(3, pos4);

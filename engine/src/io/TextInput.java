@@ -1,6 +1,6 @@
 package io;
 
-import game.GameObject;
+import game.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +11,8 @@ import org.lwjgl.glfw.GLFW;
 /**
  *
  * @author Andrew_2
+ * 
+ * An extension of keycallback to parse characters from key input
  */
 public class TextInput extends KeyCallback {
 
@@ -18,7 +20,7 @@ public class TextInput extends KeyCallback {
     private Map<Integer, Character> keyMap;
     private Map<Integer, Character> shiftMap;
 
-    public TextInput(GameObject parent) {
+    public TextInput(Component  parent) {
         super(parent);
         callbacks = new CopyOnWriteArrayList<>();
         keyMap = defaultKeyMap;
@@ -95,6 +97,7 @@ public class TextInput extends KeyCallback {
 
         defaultShiftMap = new HashMap<>();
         defaultShiftMap.put(GLFW.GLFW_KEY_BACKSPACE, '\b');
+        defaultShiftMap.put(GLFW.GLFW_KEY_ENTER, '\n');
         defaultShiftMap.put((int) '1', '!');
         defaultShiftMap.put((int) '2', '@');
         defaultShiftMap.put((int) '3', '#');

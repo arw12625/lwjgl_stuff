@@ -1,7 +1,6 @@
 package io;
 
 import game.Component;
-import game.GameObject;
 
 /**
  *
@@ -10,6 +9,6 @@ import game.GameObject;
  * Interface for mouse event handling
  */
 public abstract class MouseButtonCallback extends Component {
-    public MouseButtonCallback(GameObject parent) {super(parent);}
+    public MouseButtonCallback(Component parent) {super(parent);}
     public abstract void invoke(long window, int button, int action, int mods);
 }

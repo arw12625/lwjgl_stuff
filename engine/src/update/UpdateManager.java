@@ -8,6 +8,7 @@ import game.Game;
 import java.util.ArrayList;
 import java.util.List;
 import org.lwjgl.glfw.GLFW;
+import script.GameScript;
 
 /**
  *
@@ -77,10 +78,13 @@ public class UpdateManager implements Runnable {
         int i = 0;
         while(i < entities.size()) {
             //destoryed entities are reomved and not updated
-            if (entities.get(i).isDestroyed()) {
+            Updateable u = entities.get(i);
+            if (u.isDestroyed()) {
                 entities.remove(i);
-            } else if (entities.get(i).isEnabled()) {
-                entities.get(i).update(delta);
+            } else {
+                if (u.isEnabled()) {
+                    u.update(delta);
+                }
                 i++;
             }
         }

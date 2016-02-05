@@ -1,8 +1,7 @@
 package graphics;
 
-import game.GameObject;
+import game.Component;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.joml.Vector3f;
@@ -48,7 +47,7 @@ public class VectorGraphic extends Renderable {
     
     public static final int NUM_BYTES = 2 * 3 * Float.BYTES;
     
-    public VectorGraphic(GameObject parent, int capacity, boolean xray) {
+    public VectorGraphic(Component parent, int capacity, boolean xray) {
         super(parent);
         this.capacity = capacity;
         this.xray = xray;

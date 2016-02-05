@@ -16,10 +16,11 @@ import update.UpdateManager;
  * Game must run in the main thread that has an opengl context
  * Game is a singleton for now to allow possible inheritance
  * 
+ * Game also serves as the root component
+ * 
  */
-public class Game {
+public class Game extends Component{
 
-    public GameObjectManager gameOjbectManager;
     public GLFWManager glfwManager;
     public UpdateManager updateManager;
     public RenderManager renderManager;
@@ -31,6 +32,7 @@ public class Game {
     private boolean initializing = true;
 
     private static Game instance = null;
+    
     public static Game getInstance() {
         if(instance == null) {
             instance = new Game();
@@ -39,11 +41,11 @@ public class Game {
     }
     
     private Game() {
+        super(null);
     }
 
     //initialize the core managers in the specific order required
     public void create() {
-        this.gameOjbectManager = GameObjectManager.getInstance();
         this.glfwManager = GLFWManager.getInstance();
         this.updateManager = UpdateManager.getInstance();
         updateManager.start();
@@ -63,11 +65,17 @@ public class Game {
         close();
     }
 
+    @Override
+    public void destroy() {
+        throw new UnsupportedOperationException("Destroy game with request quit");
+    }
+    
     private void close() {
         soundManager.destroy();
         resourceManager.destroy();
         updateManager.destroy();
         glfwManager.destroy();
+        this.destroyInternal();
         System.exit(0);
     }
     
@@ -83,4 +91,5 @@ public class Game {
     public boolean initializing() {
         return initializing;
     }
+
 }

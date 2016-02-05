@@ -1,6 +1,6 @@
 package graphics.ui;
 
-import game.GameObject;
+import game.Component;
 import graphics.RenderManager;
 import graphics.Renderable;
 import graphics.ShaderProgram;
@@ -52,7 +52,7 @@ public class FlatTexture extends Renderable {
         this(null, MAX_NUMBER);
     }
 
-    public FlatTexture(GameObject parent, int capacity) {
+    public FlatTexture(Component parent, int capacity) {
         super(parent);
         this.capacity = capacity;
         textures = new ArrayList<>();

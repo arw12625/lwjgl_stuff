@@ -1,6 +1,6 @@
 package graphics;
 
-import game.GameObject;
+import game.Component;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ public class Lighting extends Renderable {
     //the data for the uniform buffer "lightBlock"
     private ByteBuffer dirLightBuffer;
 
-    public Lighting(GameObject parent, String name) {
+    public Lighting(Component parent, String name) {
         super(parent);
         
         this.name = name;

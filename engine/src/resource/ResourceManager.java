@@ -182,6 +182,10 @@ public class ResourceManager implements Runnable {
         return bufferRes.getData().getData();
     }
 
+    public ByteBuffer loadBuffer(String path) {
+        return loadResource(path, true, new BufferData()).getData().getData();
+    }
+
     
     
 }

@@ -24,7 +24,7 @@ public class GameTest {
 
             @Override
             public void update(int delta) {
-                GameObject scene = Game.getInstance().gameOjbectManager.createObject();
+                Component scene = g;
                 ScriptManager.getInstance().loadScript(scene, "game_scripts/game.js");
                 ScriptManager.getInstance().loadScript(scene, "game_scripts/viewpoint.js");
                 //ScriptManager.getInstance().loadScript(scene, "game_scripts/sound_test.js");

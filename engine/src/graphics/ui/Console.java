@@ -1,7 +1,9 @@
 package graphics.ui;
 
-import game.GameObject;
-import game.GameObjectManager;
+import game.Component;
+import game.Game;
+import graphics.RenderManager;
+import graphics.Renderable;
 import io.GLFWManager;
 import io.KeyCallback;
 import io.TextCallback;
@@ -10,10 +12,12 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.script.ScriptException;
+import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
+import resource.ResourceManager;
+import resource.TextureData;
 import script.GameScript;
 import script.ScriptManager;
 
@@ -21,10 +25,12 @@ import script.ScriptManager;
  *
  * @author Andrew_2
  */
-public class Console extends KeyCallback {
+public class Console extends Renderable {
 
+    private ConsoleKeyCallback keyCallback;
     private TextDisplay display;
     private TextInput textInput;
+    private FlatTexture textures;
     private GameScript consoleObject;
     private StringBuilder currentLine;
     private List<String> previousLines;
@@ -37,42 +43,33 @@ public class Console extends KeyCallback {
 
     private static final int dispLineCacheSize = 100;
     private static final int inputLineCacheSize = 10;
+    private static final String[] deleteDelimiters = {" ", "\n", "(", ")", "[", "]", "{", "}", "\"", "'", ":"};
+    private static final String defaultFont = "fonts/cour.ttf";
+    private static final Vector4f defaultColor = new Vector4f(0.5f,0.5f,.5f,1);
 
-    public Console(GameObject parent, TextInput textInput, int charWidth, int charHeight, int fontSize) {
+    public Console(Component parent, TextInput textInput, int charWidth, int charHeight, int fontSize) {
         super(parent);
+        this.keyCallback = new ConsoleKeyCallback();
+        GLFWManager.getInstance().addKeyCallback(keyCallback);
         this.charWidth = charWidth;
         this.charHeight = charHeight;
         charCapacity = charWidth * charHeight;
-        this.display = TextDisplay.createTextDisplay("fonts/cour.ttf", 24, GLFWManager.getInstance().getResX(), GLFWManager.getInstance().getResY(), 20, 25, charCapacity);
+        //this.display = TextDisplay.createTextDisplay(this, "fonts/cour.ttf", 24, GLFWManager.getInstance().getResX(), GLFWManager.getInstance().getResY(), 20, 25, charCapacity, new Vector4f(1, 0, 1, 1));
+        FontData f = ResourceManager.getInstance().loadResource(defaultFont, true, new FontData("consoleFont", fontSize, 512, 512, defaultColor)).getData();
+        this.display = new TextDisplay(parent, f, 30, 40, GLFWManager.getInstance().getResX(), GLFWManager.getInstance().getResY(), charCapacity);
+        TextureData.loadTextureResource("console/console.png");
+        textures = new FlatTexture(this, 10);
+        textures.addTexture("console/console.png", -1, 1, 2, 2);
+        
         this.textInput = textInput;
         this.scriptManager = ScriptManager.getInstance();
-        consoleObject = scriptManager.createScript(parent, "return { evaluateLine:function(line) { return eval(line); }}");
+        consoleObject = scriptManager.loadScript(this, "game_scripts/console.js");
 
         currentLine = new StringBuilder();
         previousLines = new ArrayList<>();
         inputLines = new ArrayList<>();
         builder = new StringBuilder();
         lineSelect = 0;
-    }
-
-    @Override
-    public void invoke(long window, int key, int scancode, int action, int mods) {
-        if (action == GLFW.GLFW_RELEASE) {
-            return;
-        }
-        processCursor(key);
-
-        char c = textInput.parseChar(window, key, scancode, action, mods);
-        if (c == '\n') {
-            evalCurrentLine();
-        } else if (c == '\b') {
-            if (currentLine.length() > 0) {
-                currentLine.setLength(currentLine.length() - 1);
-            }
-        } else if (c != '\u0000') {
-            currentLine.append(c);
-        }
-        updateDisplay();
     }
 
     private void processCursor(int key) {
@@ -161,6 +158,12 @@ public class Console extends KeyCallback {
         }
     }
 
+    public void clearConsole() {
+        previousLines.clear();
+        currentLine.setLength(0);
+        updateDisplay();
+    }
+
     public void print(String line) {
         addLine(line);
         updateDisplay();
@@ -178,15 +181,80 @@ public class Console extends KeyCallback {
     }
 
     public static Console createConsole() {
-        return createConsole("fonts/cour.ttf", 24, 40, 12);
+        return createConsole(24, 40, 12);
 
     }
 
-    public static Console createConsole(String fontName, int fontSize, int charWidth, int charHeight) {
-        GameObject parent = GameObjectManager.getInstance().createObject();
+    public static Console createConsole(int fontSize, int charWidth, int charHeight) {
         TextInput ti = GLFWManager.getInstance().getDefaultTextInput();
-        Console c = new Console(parent, ti, charWidth, charHeight, fontSize);
-        GLFWManager.getInstance().addKeyCallback(c);
+        Console c = new Console(Game.getInstance(), ti, charWidth, charHeight, fontSize);
+        c.enable(false);
+        RenderManager.getInstance().add(c);
         return c;
+    }
+    
+    @Override
+    public int getZIndex() {
+        return RenderManager.HUD_Z_INDEX;
+    }
+    
+    @Override
+    public void initRender() {
+        textures.initRender();
+        display.initRender();
+    }
+
+    @Override
+    public void render() {
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        textures.render();
+        display.render();
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
+    }
+
+    private class ConsoleKeyCallback extends KeyCallback {
+
+        public ConsoleKeyCallback() {
+            super(Console.this);
+        }
+
+        @Override
+        public void invoke(long window, int key, int scancode, int action, int mods) {
+            if (action == GLFW.GLFW_RELEASE) {
+                return;
+            }
+            processCursor(key);
+
+            char c = textInput.parseChar(window, key, scancode, action, mods);
+            if (c == '\n') {
+                if (mods != GLFW.GLFW_MOD_SHIFT) {
+                    evalCurrentLine();
+                } else {
+                    currentLine.append('\n');
+                }
+            } else if (c == '\b') {
+                if (mods == GLFW.GLFW_MOD_CONTROL) {
+                    int newLength = -1;
+                    for (String s : deleteDelimiters) {
+                        newLength = Math.max(newLength, currentLine.lastIndexOf(s));
+                    }
+                    newLength = Math.min(newLength + 1, currentLine.length() - 1);
+                    newLength = Math.max(newLength, 0);
+                    currentLine.setLength(newLength);
+                } else {
+                    if (currentLine.length() > 0) {
+                        currentLine.setLength(currentLine.length() - 1);
+                    }
+                }
+            } else if (c == '\t') {
+                currentLine.append("   ");
+            } else if (c == GLFW.GLFW_KEY_GRAVE_ACCENT) {
+
+            } else if (c != '\u0000') {
+                currentLine.append(c);
+            }
+            updateDisplay();
+        }
+
     }
 }

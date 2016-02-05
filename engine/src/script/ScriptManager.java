@@ -1,7 +1,7 @@
 package script;
 
+import game.Component;
 import game.Game;
-import game.GameObject;
 import java.util.ArrayList;
 import java.util.List;
 import resource.TextData;
@@ -58,7 +58,6 @@ public class ScriptManager {
         
         //add singleton managers to simplified names
         engine.put("gameInst", Game.getInstance());
-        engine.put("objManager", game.GameObjectManager.getInstance());
         engine.put("renderManager", graphics.RenderManager.getInstance());
         engine.put("resourceManager", resource.ResourceManager.getInstance());
         engine.put("scriptManager", this);
@@ -66,8 +65,6 @@ public class ScriptManager {
         engine.put("updateManager", update.UpdateManager.getInstance());
         engine.put("glfwManager", io.GLFWManager.getInstance());
         setCurrentObject(null);
-        
-        eval("destroy = function(toDestroy) {objManager.destroyObject(toDestroy);}");
         
         // evaluate JavaScript code from startup scripts
         String[] startupPaths = {"Script.js"};
@@ -94,7 +91,7 @@ public class ScriptManager {
     }
 
     //set the engine-wide current object variable for use by child script
-    private void setCurrentObject(GameObject parent) {
+    private void setCurrentObject(Component parent) {
         engine.put("currentObject", parent);
     }
     private void setCurrentScript(GameScript gs) {
@@ -105,7 +102,7 @@ public class ScriptManager {
         return createScript(null, script);
     }
     
-    public GameScript createScript(GameObject parent, String script) {
+    public GameScript createScript(Component parent, String script) {
         setCurrentObject(parent);
         GameScript gs = new GameScript(parent, script);
         setCurrentScript(gs);
@@ -119,7 +116,7 @@ public class ScriptManager {
         return loadScript(null, path);
     }
     
-    public GameScript loadScript(GameObject parent, String path) {
+    public GameScript loadScript(Component parent, String path) {
         return createScript(parent, TextData.loadText(path));
     }
 

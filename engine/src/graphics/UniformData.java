@@ -90,8 +90,13 @@ public class UniformData {
         return index;
     }
     
-    protected void addStruct(UniformStruct str) {
+    public int getUniform(String name) {
+        return uniformIndices.get(name);
+    }
+    
+    public void addStruct(UniformStruct str) {
         structs.add(str);
+        str.createUniformStruct(this);
     }
 
     //mark all uniforms as changed
@@ -106,7 +111,7 @@ public class UniformData {
     protected void updateUniforms() {
         
         for(int i = 0; i < structs.size(); i++) {
-            structs.get(i).updateUniformStruct();
+            structs.get(i).updateUniformStruct(this);
         }
         
         Integer index;

@@ -22,7 +22,7 @@ function convertModels() {
 }
 
 function createLighting() {
-    var lighting = new graphics.Lighting(null, "lightBlock");
+    var lighting = new graphics.Lighting(gameInst, "lightBlock");
     renderManager.add(lighting);
 
     var dir = new joml.Vector3f(1, 0, 0);
@@ -55,12 +55,20 @@ function createHud() {
     renderManager.add(h);
     //h.addTexture(tex, 0, 0, 1, 1, 0, 0, 0.1, 0.1);
 
-    var textDisp = ui.TextDisplay.createTextDisplay("fonts/arial.ttf", 24, 200, 50, 25, 450, 20);
+    var textDisp = ui.TextDisplay.createTextDisplay(obj, "fonts/arial.ttf", 24, 200, 200, 20, 430, 20, new joml.Vector4f(1,0,1,1));
     addUpdate(function (delta) {
      textDisp.setText("FPS: " + delta);
      });
      
-    ui.Console.createConsole();
+    var console = ui.Console.createConsole();
+    var key = new io.KeyCallback(obj, {
+        invoke: function (window, key, scancode, action, mods) {
+            if (key == GLFW.GLFW_KEY_GRAVE_ACCENT && action == GLFW.GLFW_PRESS) {
+                console.enable(!console.isEnabled());
+            }
+        }
+    });
+    glfwManager.addKeyCallback(key);
 
 }
 
@@ -70,22 +78,22 @@ function createModels() {
         //var obj = createSimpleRenderer("misc_models/ter.json");
 
         var monkeys = [];
-        var key = new io.KeyCallback(null, {
+        var key = new io.KeyCallback(obj, {
             invoke: function (window, key, scancode, action, mods) {
                 if (key == GLFW.GLFW_KEY_SPACE && action == GLFW.GLFW_PRESS) {
-                    var obj = createSimpleRenderer("misc_models/tree.json");
-                    scriptManager.loadScript(obj, "game_scripts/translate.js");
-                    monkeys.push(obj);
+                    var rend = createSimpleRenderer("misc_models/tree.json");
+                    scriptManager.loadScript(rend, "game_scripts/translate.js");
+                    monkeys.push(rend);
                 }
                 if (key == GLFW.GLFW_KEY_T && action == GLFW.GLFW_PRESS) {
-                    var obj = createSimpleRenderer("misc_models/sphere.json");
-                    scriptManager.loadScript(obj, "game_scripts/translate.js");
-                    monkeys.push(obj);
+                    var rend = createSimpleRenderer("misc_models/sphere.json");
+                    scriptManager.loadScript(rend, "game_scripts/translate.js");
+                    monkeys.push(rend);
                 }
 
                 if (key == GLFW.GLFW_KEY_R && action == GLFW.GLFW_PRESS) {
                     if (monkeys.length > 0) {
-                        destroy(monkeys.pop());
+                        monkeys.pop().destroy();
                     }
                 }
             }
@@ -96,7 +104,7 @@ function createModels() {
 }
 
 function createSimpleRenderer(path) {
-    var obj = objManager.createObject();
-    var r = graphics.JSONRenderer.createJSONRenderer(obj, path);
-    return obj;
+    var rend = new game.GameObject(obj);
+    var r = graphics.JSONRenderer.createJSONRenderer(rend, path);
+    return rend;
 }

@@ -1,6 +1,6 @@
 package graphics.ui;
 
-import game.GameObject;
+import game.Component;
 import graphics.RenderManager;
 import graphics.Renderable;
 import graphics.ShaderProgram;
@@ -42,7 +42,7 @@ public class TextDisplay extends Renderable {
 
     private StringBuilder text;
     private boolean changed;
-    private Font f;
+    private FontData f;
     //pixel coordinates
     private float x, y;
     //the number of pixels wide the display can use
@@ -66,7 +66,7 @@ public class TextDisplay extends Renderable {
     static final int defaultCapacity = 100;
     static final int NUM_BYTES = (2 + 2) * 4 * Float.BYTES;
 
-    public TextDisplay(GameObject parent, Font f, float x, float y, float width, float height, int capacity) {
+    public TextDisplay(Component parent, FontData f, float x, float y, float width, float height, int capacity) {
 
         super(parent);
         this.f = f;
@@ -88,16 +88,14 @@ public class TextDisplay extends Renderable {
         quad = STBTTAlignedQuad.create();
         sp = ShaderProgram.loadProgram("shaders/text.vs", "shaders/text.fs");
         ud = new UniformData(sp);
-        int colorHandle = ud.createUniform("color", UniformData.GL_UNIFORM_TYPE.GL_4fv, 1);
-        ud.setUniform(colorHandle, f.color);
+        ud.addStruct(f);
         sp.setUniformData(ud);
-        ud.setTexture("tex", f.textureName);
     }
 
     @Override
     public void initRender() {
         sp.compileShader();
-
+        
         arrayHandle = GL30.glGenVertexArrays();
         glBindVertexArray(arrayHandle);
         bufferHandle = glGenBuffers();
@@ -137,7 +135,7 @@ public class TextDisplay extends Renderable {
             while (i < length) {
                 if (newLine) {
                     xPos.put(0, x);
-                    yPos.put(0, yPos.get(0) + f.fontSize + lineSpacing);
+                    yPos.put(0, yPos.get(0) + f.getFontSize() + lineSpacing);
                     newLine = false;
 
                 }
@@ -153,7 +151,7 @@ public class TextDisplay extends Renderable {
                     continue;
                 }
 
-                STBTruetype.stbtt_GetBakedQuad(f.cdata, f.tex.getImageWidth(), f.tex.getImageHeight(), c - 32, xPos, yPos, quad, 1);
+                STBTruetype.stbtt_GetBakedQuad(f.getCdata(), f.getBitMapWidth(), f.getBitMapHeight(), c - 32, xPos, yPos, quad, 1);
                 float currentWidth = quad.x1() - x;
                 float currentHeight = quad.y1() - y;
                 if (currentHeight > height) {
@@ -220,13 +218,13 @@ public class TextDisplay extends Renderable {
     }
 
     public static TextDisplay createTextDisplay(String fontPath, int fontSize, float width, float height) {
-        return createTextDisplay(fontPath, fontSize, width, height, 20, 20, defaultCapacity);
+        return createTextDisplay(null, fontPath, fontSize, width, height, 20, 20, defaultCapacity, new Vector4f(1,1,0,1));
     }
 
-    public static TextDisplay createTextDisplay(String fontPath, int fontSize, float width, float height, float x, float y, int capacity) {
-        ByteBuffer b = ResourceManager.getInstance().loadResource(fontPath, new BufferData()).getData().getData();
-        Font f = new Font(fontPath, b, fontSize);
-        TextDisplay td = new TextDisplay(null, f, x, y, width, height, capacity);
+    
+    public static TextDisplay createTextDisplay(Component parent, String fontPath, int fontSize, float width, float height, float x, float y, int capacity, Vector4f color) {
+        FontData f = ResourceManager.getInstance().loadResource(fontPath, true, new FontData(fontPath, fontSize, 512, 512, color)).getData();
+        TextDisplay td = new TextDisplay(parent, f, x, y, width, height, capacity);
         RenderManager.getInstance().add(td);
         return td;
     }
@@ -236,37 +234,5 @@ public class TextDisplay extends Renderable {
         return 1000;
     }
 
-    //a class representing a true type font and associated bitmap and character map
-    public static class Font {
-
-        String name;
-        String textureName;
-        TextureData tex;
-        STBTTBakedChar.Buffer cdata;
-        int fontSize;
-        Vector4f color;
-
-        public static final int bitmapWidth = 512;
-        public static final int bitmapHeight = 512;
-
-        public Font(String name, ByteBuffer fontTTF, int fontSize) {
-            this(name, fontTTF, fontSize, bitmapWidth, bitmapHeight);
-        }
-
-        public Font(String name, ByteBuffer fontTTF, int fontSize, int bitMapWidth, int bitMapHeight) {
-            this(name, fontTTF, fontSize, bitMapWidth, bitMapHeight, new Vector4f(0, 0, 0, 1));
-        }
-
-        public Font(String name, ByteBuffer fontTTF, int fontSize, int bitMapWidth, int bitMapHeight, Vector4f color) {
-            this.name = name;
-            this.fontSize = fontSize;
-            ByteBuffer bitmap = BufferUtils.createByteBuffer(bitMapHeight * bitMapWidth);
-            cdata = STBTTBakedChar.createBuffer(96);
-            STBTruetype.stbtt_BakeFontBitmap(fontTTF, fontSize, bitmap, bitMapWidth, bitMapHeight, 32, cdata);
-            tex = new TextureData(bitmap, bitMapWidth, bitMapHeight, TextureData.TextureType.ALPHA);
-            textureName = name + "_" + fontSize;
-            this.color = color;
-            RenderManager.getInstance().queueTexture(name + "_" + fontSize, tex);
-        }
-    }
+    
 }

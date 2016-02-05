@@ -8,7 +8,7 @@ var monoSourceName = "monoTest";
 soundManager.loadBuffer(monoName, monoRes.getData());
 soundManager.createSource(monoSourceName);
 soundManager.setSourcePosition(monoSourceName, -10,0,0);
-soundManager.setSourceBuffer(monoSourceName, monoName, true, true);
+//soundManager.setSourceBuffer(monoSourceName, monoName, true, true);
 
 
 var jazzRes = resourceManager.loadResource("sound/stereoTest.ogg", new sound.SoundData());
@@ -19,4 +19,4 @@ var sourceName = "background";
 soundManager.loadBuffer(bufferName, jazzRes.getData());
 soundManager.createSource(sourceName);
 soundManager.setSourceGain(sourceName, 0);
-//soundManager.setSourceBuffer(sourceName, bufferName, true, true);
+soundManager.setSourceBuffer(sourceName, bufferName, true, true);

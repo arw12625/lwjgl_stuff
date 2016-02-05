@@ -1,6 +1,6 @@
 package graphics.ui;
 
-import game.GameObject;
+import game.Component;
 import io.TextCallback;
 
 /**
@@ -11,7 +11,7 @@ public class TextArea extends TextCallback {
 
     private TextDisplay display;
 
-    public TextArea(GameObject parent, TextDisplay display) {
+    public TextArea(Component parent, TextDisplay display) {
         super(parent);
         this.display = display;
     }

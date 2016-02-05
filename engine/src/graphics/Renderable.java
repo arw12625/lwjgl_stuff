@@ -1,7 +1,6 @@
 package graphics;
 
 import game.Component;
-import game.GameObject;
 
 /**
  *
@@ -17,7 +16,7 @@ public abstract class Renderable extends Component {
 
     boolean initialized;
     
-    public Renderable(GameObject parent) {
+    public Renderable(Component parent) {
         super(parent);
         initialized = false;
     }
