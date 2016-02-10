@@ -43,7 +43,7 @@ public class Console extends Renderable {
 
     private static final int dispLineCacheSize = 100;
     private static final int inputLineCacheSize = 10;
-    private static final String[] deleteDelimiters = {" ", "\n", "(", ")", "[", "]", "{", "}", "\"", "'", ":"};
+    private static final String[] deleteDelimiters = {" ", "\n", "(", ")", "[", "]", "{", "}", "\"", "'", ":", "."};
     private static final String defaultFont = "fonts/cour.ttf";
     private static final Vector4f defaultColor = new Vector4f(0.5f,0.5f,.5f,1);
 
@@ -180,14 +180,14 @@ public class Console extends Renderable {
         }
     }
 
-    public static Console createConsole() {
-        return createConsole(24, 40, 12);
+    public static Console createConsole(Component parent) {
+        return createConsole(parent, 24, 40, 12);
 
     }
 
-    public static Console createConsole(int fontSize, int charWidth, int charHeight) {
+    public static Console createConsole(Component parent, int fontSize, int charWidth, int charHeight) {
         TextInput ti = GLFWManager.getInstance().getDefaultTextInput();
-        Console c = new Console(Game.getInstance(), ti, charWidth, charHeight, fontSize);
+        Console c = new Console(parent, ti, charWidth, charHeight, fontSize);
         c.enable(false);
         RenderManager.getInstance().add(c);
         return c;
@@ -210,6 +210,10 @@ public class Console extends Renderable {
         textures.render();
         display.render();
         GL11.glEnable(GL11.GL_DEPTH_TEST);
+    }
+    
+    public GameScript getScript() {
+        return consoleObject;
     }
 
     private class ConsoleKeyCallback extends KeyCallback {

@@ -75,13 +75,13 @@ public class UniformData {
      * returns the internal index of the uniform, not the uniforms location in the shader
      * this index must be used to set the uniform data with the setUniform methods
      */
-    public int createUniform(String name, GL_UNIFORM_TYPE type, int count) {
+    public int createUniform(String name, GLType type, int count) {
         Integer index = uniformIndices.get(name);
         if (index == null) {
             index = uniforms.size();
             int offset = currentSize;
-            currentSize += count * type.sizeBytes();
             Uniform uni = new Uniform(name, index, type, count, offset);
+            currentSize += uni.getByteSize();
             uniformNew.add(index);
             uniformChanged.add(index);
             uniforms.add(uni);
@@ -109,7 +109,6 @@ public class UniformData {
     
     //upload changed uniforms
     protected void updateUniforms() {
-        
         for(int i = 0; i < structs.size(); i++) {
             structs.get(i).updateUniformStruct(this);
         }
@@ -193,7 +192,7 @@ public class UniformData {
 
     public void setUniform(int index, float[] fdata) {
         prepareUniformData(index);
-        int count = Math.min(uniforms.get(index).count, fdata.length);
+        int count = Math.min(uniforms.get(index).getComponents(), fdata.length);
         for (int i = 0; i < count; i++) {
             data.putFloat(fdata[i]);
         }
@@ -201,7 +200,7 @@ public class UniformData {
 
     public void setUniform(int index, int[] idata) {
         prepareUniformData(index);
-        int count = Math.min(uniforms.get(index).count, idata.length);
+        int count = Math.min(uniforms.get(index).getComponents(), idata.length);
         for (int i = 0; i < count; i++) {
             data.putFloat(idata[i]);
         }
@@ -247,7 +246,7 @@ public class UniformData {
     public void setTexture(String samplerName, String textureName) {
         int texUnit = owner.getTextureUnit(samplerName);
         if(!textureMap.containsKey(texUnit)) {
-            int uniIndex = createUniform(samplerName, GL_UNIFORM_TYPE.GL_1iv, 1);
+            int uniIndex = createUniform(samplerName, GLType.GL_1iv, 1);
             setUniform(uniIndex, texUnit);
         }
         textureMap.put(texUnit, textureName);
@@ -271,35 +270,16 @@ public class UniformData {
         }
     }
 
-    public enum GL_UNIFORM_TYPE {
-
-        GL_1iv(4), GL_1fv(4),
-        GL_2iv(8), GL_2fv(8),
-        GL_3iv(12), GL_3fv(12),
-        GL_4iv(16), GL_4fv(16),
-        GL_m2fv(16), GL_m3fv(36), GL_m4fv(64);
-
-        private final int sizeBytes;
-
-        GL_UNIFORM_TYPE(int sizeBytes) {
-            this.sizeBytes = sizeBytes;
-        }
-
-        public int sizeBytes() {
-            return sizeBytes;
-        }
-    }
-
     private static class Uniform {
 
         String name;
         int index;
         int location;
-        GL_UNIFORM_TYPE type;
+        GLType type;
         int count;
         int offset;
 
-        public Uniform(String name, int index, GL_UNIFORM_TYPE type, int count, int offset) {
+        public Uniform(String name, int index, GLType type, int count, int offset) {
             this.name = name;
             this.index = index;
             this.type = type;
@@ -309,6 +289,10 @@ public class UniformData {
 
         public int getByteSize() {
             return count * type.sizeBytes();
+        }
+        
+        public int getComponents() {
+            return count * type.components();
         }
     }
 }

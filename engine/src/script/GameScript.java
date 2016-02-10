@@ -42,7 +42,7 @@ public class GameScript extends Component implements Updateable {
         return interfaces;
     }
     
-    protected Object getScriptObject() {
+    public Object getScriptObject() {
         return scriptObject;
     }
     

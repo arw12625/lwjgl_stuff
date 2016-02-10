@@ -31,9 +31,9 @@ public class UniformTransform implements UniformStruct {
     
     @Override
     public void createUniformStruct(UniformData parent) {
-        parent.createUniform(pvmName, graphics.UniformData.GL_UNIFORM_TYPE.GL_m4fv, 1);
-        parent.createUniform(vmName, graphics.UniformData.GL_UNIFORM_TYPE.GL_m4fv, 1);
-        parent.createUniform(normalName, graphics.UniformData.GL_UNIFORM_TYPE.GL_m3fv, 1);
+        parent.createUniform(pvmName, graphics.GLType.GL_m4fv, 1);
+        parent.createUniform(vmName, graphics.GLType.GL_m4fv, 1);
+        parent.createUniform(normalName, graphics.GLType.GL_m3fv, 1);
     }
     
     @Override

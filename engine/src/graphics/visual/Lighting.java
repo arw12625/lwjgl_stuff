@@ -1,6 +1,9 @@
-package graphics;
+package graphics.visual;
 
 import game.Component;
+import graphics.GLBuffer;
+import graphics.RenderManager;
+import graphics.Renderable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,8 @@ public class Lighting extends Renderable {
 
     //the data for the uniform buffer "lightBlock"
     private ByteBuffer dirLightBuffer;
+    
+    private GLBuffer glBuffer;
 
     public Lighting(Component parent, String name) {
         super(parent);
@@ -34,7 +39,7 @@ public class Lighting extends Renderable {
         dirLightBuffer = BufferUtils.createByteBuffer(4 * 4 * 4 * MAX_LIGHTS + 4 * 4); //lights + header
         numDirLights = 0;
 
-        RenderManager.getInstance().createBuffer(name, dirLightBuffer, true);
+        glBuffer = RenderManager.getInstance().createUniformBuffer(name, dirLightBuffer, true);
 
     }
     
@@ -70,7 +75,7 @@ public class Lighting extends Renderable {
             dirLightBuffer.putFloat(0);//padding for vec4
         }
         dirLightBuffer.rewind();
-        RenderManager.getInstance().setUniformBuffer(name, dirLightBuffer);
+        glBuffer.setChanged();
     }
 
     public void addDirLight(DirLight light) {

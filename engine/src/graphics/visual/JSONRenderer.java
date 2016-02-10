@@ -1,9 +1,14 @@
-package graphics;
+package graphics.visual;
 
 import game.Component;
 import resource.JSONData;
 import geometry.Material;
 import geometry.Transform;
+import graphics.RenderManager;
+import graphics.Renderable;
+import graphics.ShaderProgram;
+import graphics.UniformData;
+import graphics.UniformTransform;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -111,7 +116,7 @@ public class JSONRenderer extends Renderable {
                 m.attributeLocations.add(GL20.glGetAttribLocation(m.sp.getProgram(), attr.getString("name")));
                 glEnableVertexAttribArray(m.attributeLocations.get(i));
                 glVertexAttribPointer(m.attributeLocations.get(i), attr.getInt("number"),
-                        RenderManager.parseGLType(attr.getString("type")).glRef(), false, vertexSize, attr.getInt("offset"));
+                        RenderManager.parseGLType(attr.getString("type")), false, vertexSize, attr.getInt("offset"));
             }
             m.numberFaces = m.json.getInt("face_num");
             m.faceHandle = glGenBuffers();

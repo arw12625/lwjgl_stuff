@@ -1,5 +1,6 @@
 package graphics.ui;
 
+import graphics.GLType;
 import graphics.RenderManager;
 import graphics.UniformData;
 import graphics.UniformStruct;
@@ -54,7 +55,7 @@ public class FontData extends Data implements UniformStruct {
 
     @Override
     public void createUniformStruct(UniformData parent) {
-        int id = parent.createUniform("color", UniformData.GL_UNIFORM_TYPE.GL_4fv, 1);
+        int id = parent.createUniform("color", GLType.GL_4fv, 1);
         parent.setUniform(id, color);
         parent.setTexture(textureUniformName, textureName);
     }

@@ -1,6 +1,11 @@
 
 print("Game.js Start");
 
+var lighting;
+var trees;
+var spheres;
+var modelAddKey;
+
 convertModels();
 
 createLighting();
@@ -9,6 +14,9 @@ createHud();
 
 createModels();
 
+for(var i = 0; i < 10; i++) {
+   visual.ParticleEmitter.createEmit(obj, "part " + i, 50, new joml.Vector3f(10 * (Math.random()-.5), 10 * (Math.random()-.5), 10 * (Math.random()-.5)));
+}
 
 print("Game.js End");
 
@@ -22,7 +30,7 @@ function convertModels() {
 }
 
 function createLighting() {
-    var lighting = new graphics.Lighting(gameInst, "lightBlock");
+    lighting = new visual.Lighting(gameInst, "lightBlock");
     renderManager.add(lighting);
 
     var dir = new joml.Vector3f(1, 0, 0);
@@ -50,61 +58,55 @@ function createLighting() {
 
 function createHud() {
 
-    var tex = resource.TextureData.loadTextureResource("misc_models/tex.png").getPath();
+    /*var tex = resource.TextureData.loadTextureResource("misc_models/tex.png").getPath();
     h = new ui.FlatTexture();
     renderManager.add(h);
-    //h.addTexture(tex, 0, 0, 1, 1, 0, 0, 0.1, 0.1);
+    //h.addTexture(tex, 0, 0, 1, 1, 0, 0, 0.1, 0.1);*/
 
-    var textDisp = ui.TextDisplay.createTextDisplay(obj, "fonts/arial.ttf", 24, 200, 200, 20, 430, 20, new joml.Vector4f(1,0,1,1));
-    addUpdate(function (delta) {
-     textDisp.setText("FPS: " + delta);
-     });
-     
-    var console = ui.Console.createConsole();
-    var key = new io.KeyCallback(obj, {
-        invoke: function (window, key, scancode, action, mods) {
-            if (key == GLFW.GLFW_KEY_GRAVE_ACCENT && action == GLFW.GLFW_PRESS) {
-                console.enable(!console.isEnabled());
-            }
-        }
-    });
-    glfwManager.addKeyCallback(key);
+    
 
 }
 
 function createModels() {
     with (core) {
 
-        //var obj = createSimpleRenderer("misc_models/ter.json");
-
-        var monkeys = [];
-        var key = new io.KeyCallback(obj, {
+        trees = new GameObject(obj);
+        spheres = new GameObject(obj);
+        var models = [];
+        modelAddKey = new io.KeyCallback(obj, {
             invoke: function (window, key, scancode, action, mods) {
-                if (key == GLFW.GLFW_KEY_SPACE && action == GLFW.GLFW_PRESS) {
-                    var rend = createSimpleRenderer("misc_models/tree.json");
-                    scriptManager.loadScript(rend, "game_scripts/translate.js");
-                    monkeys.push(rend);
-                }
                 if (key == GLFW.GLFW_KEY_T && action == GLFW.GLFW_PRESS) {
-                    var rend = createSimpleRenderer("misc_models/sphere.json");
+                    var rend = createSimpleRenderer(trees, "misc_models/tree.json");
                     scriptManager.loadScript(rend, "game_scripts/translate.js");
-                    monkeys.push(rend);
+                    models.push(rend);
+                }
+                if (key == GLFW.GLFW_KEY_SPACE && action == GLFW.GLFW_PRESS) {
+                    var rend = createSimpleRenderer(spheres, "misc_models/sphere.json");
+                    scriptManager.loadScript(rend, "game_scripts/translate.js");
+                    models.push(rend);
                 }
 
                 if (key == GLFW.GLFW_KEY_R && action == GLFW.GLFW_PRESS) {
-                    if (monkeys.length > 0) {
-                        monkeys.pop().destroy();
+                    if (models.length > 0) {
+                        models.pop().destroy();
                     }
                 }
             }
         });
-        glfwManager.addKeyCallback(key);
+        glfwManager.addKeyCallback(modelAddKey);
 
     }
 }
 
-function createSimpleRenderer(path) {
-    var rend = new game.GameObject(obj);
-    var r = graphics.JSONRenderer.createJSONRenderer(rend, path);
+function createSimpleRenderer(parent, path) {
+    var rend = new game.GameObject(parent);
+    var r = visual.JSONRenderer.createJSONRenderer(rend, path);
     return rend;
 }
+
+return {
+    getTrees : function() {return trees; }, 
+    getSpheres : function() {return spheres;},
+    getLighting : function() {return lighting;},
+    setAddObjects : function(enable) {modelAddKey.enable(enable);}
+};

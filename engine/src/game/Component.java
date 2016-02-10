@@ -30,9 +30,9 @@ public abstract class Component {
         eventHandler = new HashMap<>();
         children = new CopyOnWriteArrayList<>();
         if (parent != null) {
+            enabled = parent.isEnabled();
             parent.addChild(this);
         }
-        this.dispatch("added");
     }
 
     public List<Component> getChildren() {
@@ -70,6 +70,7 @@ public abstract class Component {
 
     public void enable(boolean enabled) {
         this.enabled = enabled;
+        dispatch("enabled");
         for(Component child : children) {
             child.enable(enabled);
         }

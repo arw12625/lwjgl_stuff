@@ -24,11 +24,13 @@ public class ScriptTestNash {
         System.out.println(obj);
         */
         
-        engine.eval("console = (function() {return { evalFunc : function(code) { return  eval(code) } }})()");
+        /*engine.eval("console = (function() {return { evalFunc : function(code) { return  eval(code) } }})()");
         System.out.println(engine.eval("console.evalFunc('3 + 3')"));
         engine.eval("console.evalFunc('this.z = 3')");
         System.out.println(engine.eval("console.evalFunc('console.z')"));
-        System.out.println(engine.eval("console.evalFunc('console')"));
+        System.out.println(engine.eval("console.evalFunc('console')"));*/
+        
+        engine.eval("x = (function() {var c = 2; return {c : c, pr : function() {print(c)}}})(); x.pr();");
         
         
         

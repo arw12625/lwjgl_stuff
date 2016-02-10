@@ -4,6 +4,7 @@ import io.GLFWManager;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -21,6 +22,7 @@ import org.lwjgl.opengl.GL15;
 import static org.lwjgl.opengl.GL15.glGenBuffers;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
 import static org.lwjgl.opengl.GL31.GL_UNIFORM_BUFFER;
 import resource.Resource;
 import resource.TextureData;
@@ -28,14 +30,13 @@ import resource.TextureData;
 /**
  *
  * @author Andrew_2
- * 
- * RenderManager is a singleton manager
- * it interfaces with opengl, it runs on the main thread with opengl context
- * it contains a utility for creating gpu buffers for use by opengl
- * and maintains and renders a list of all Renderables
+ *
+ * RenderManager is a singleton manager it interfaces with opengl, it runs on
+ * the main thread with opengl context it contains a utility for creating gpu
+ * buffers for use by opengl and maintains and renders a list of all Renderables
  * in addition it handles lighting and the viewpoint/camera
- * 
- * 
+ *
+ *
  */
 public class RenderManager {
 
@@ -54,12 +55,12 @@ public class RenderManager {
     private List<Renderable> renderables;
     //the z-indices corresponding with the above renderables
     private List<Integer> zIndices;
-    
+
     //the viewpoint and corresponding matrices for convienince
     private Matrix4f projectionMatrix;
     private Matrix4f projectionViewMatrix;
     private ViewPoint vp;
-    
+
     //the last shader program used
     private ShaderProgram shaderProgram;
 
@@ -70,32 +71,18 @@ public class RenderManager {
     //a map from texture name to texture handles used by opengl
     private Map<String, Integer> textureHandles;
 
-    //all named opengl buffers
-    private Map<String, GLBuffer> glBuffers;
-    //a queue of buffers with data to reupload
-    private Queue<GLBuffer> buffersChanged;
-    //a queue of buffers with data to release
-    private Queue<GLBuffer> buffersToRelease;
-    
+    //named uniform opengl buffers
+    private Map<String, GLBuffer> uniformBuffers;
+    //opengl buffers
+    private List<GLBuffer> glBuffers;
+    //buffers to upload
+    private Queue<GLBuffer> buffersToUpload;
+
     private int resX, resY;
 
     public static final int HUD_Z_INDEX = 1000;
     public static final int DEFAULT_Z_INDEX = 0;
     public static final int PRE_RENDER_Z_INDEX = -1000;
-
-    public static class GLBuffer {
-
-        String name;
-        ByteBuffer data;
-        int bufferHandle;
-        boolean dynamic;
-
-        public GLBuffer(String name, boolean dynamic) {
-            this.name = name;
-            this.dynamic = dynamic;
-            bufferHandle = -1;
-        }
-    }
 
     private RenderManager() {
         toAdd = new ConcurrentLinkedQueue<>();
@@ -111,9 +98,9 @@ public class RenderManager {
         texturesToUploadName = new ConcurrentLinkedQueue<>();
         textureHandles = new HashMap<>();
 
-        glBuffers = new HashMap<>();
-        buffersChanged = new ConcurrentLinkedQueue<>();
-        buffersToRelease = new ConcurrentLinkedQueue<>();
+        uniformBuffers = new HashMap<>();
+        glBuffers = new ArrayList<>();
+        buffersToUpload = new ConcurrentLinkedQueue<>();
 
         Quaternionf q = new Quaternionf();
         q.set(new AxisAngle4f(0, 0, 0, 1));
@@ -121,7 +108,6 @@ public class RenderManager {
         //setOrthographicProjection(16, 12, -.1f, -10);
         setPespectiveProjection(3.14f / 3, 1.333f, .1f, 100);
 
-        
         //opengl settings
         glClearColor(.15f, 0.15f, .15f, 0);
         GL11.glClearDepth(1f);
@@ -133,12 +119,12 @@ public class RenderManager {
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        
+
         resX = GLFWManager.getInstance().getResX();
         resY = GLFWManager.getInstance().getResY();
 
     }
-    
+
     public int getResX() {
         return resX;
     }
@@ -179,7 +165,7 @@ public class RenderManager {
 
     private void initialize(Renderable r) {
         r.internalInit();
-        
+
         int i = 0;
         int z = r.getZIndex();
         while (i < renderables.size() && zIndices.get(i) < z) {
@@ -236,7 +222,7 @@ public class RenderManager {
         shaderProgram = sp;
         sp.update();
     }
-    
+
     public void bind(int textureID) {
         bind(textureID, 0);
     }
@@ -257,7 +243,7 @@ public class RenderManager {
     public int getTextureHandle(String name) {
         return textureHandles.getOrDefault(name, 0);
     }
-    
+
     public void updateViewMat() {
         projectionMatrix.mul(vp.getViewMatrix(), projectionViewMatrix);
     }
@@ -291,100 +277,63 @@ public class RenderManager {
         return vp.getViewMatrix();
     }
 
+    public GLBuffer getUniformBuffer(String name) {
+        return uniformBuffers.get(name);
+    }
+
     private void updateBuffers() {
         GLBuffer buf;
-        while ((buf = buffersChanged.poll()) != null) {
-            if (buf.bufferHandle == -1) {
-                buf.bufferHandle = glGenBuffers();
-            }
-            GL15.glBindBuffer(GL_UNIFORM_BUFFER, buf.bufferHandle);
-            GL15.glBufferData(GL_UNIFORM_BUFFER, buf.data.capacity(), buf.data,
-                    buf.dynamic ? GL15.GL_DYNAMIC_DRAW : GL15.GL_STATIC_DRAW);
+        while ((buf = buffersToUpload.poll()) != null) {
+            buf.create();
+            glBuffers.add(buf);
         }
-        while ((buf = buffersToRelease.poll()) != null) {
-            GL15.glDeleteBuffers(buf.bufferHandle);
+        Iterator<GLBuffer> iter = glBuffers.iterator();
+        while (iter.hasNext()) {
+            buf = iter.next();
+            if (buf.isToRelease()) {
+                buf.destroy();
+                iter.remove();
+            } else if (buf.isChanged()) {
+                buf.updateBuffer();
+            }
         }
     }
+
+    public void addGLBuffer(GLBuffer buf) {
+            buffersToUpload.add(buf);
+    }
     
-    public void createBuffer(String name, ByteBuffer data, boolean dynamic) {
-        if (!glBuffers.containsKey(name)) {
-            GLBuffer buf = new GLBuffer(name, dynamic);
-            glBuffers.put(name, buf);
-            setUniformBuffer(name, data);
+    public void addUniformBuffer(String name, GLBuffer buf) {
+        uniformBuffers.put(name, buf);
+        addGLBuffer(buf);
+    }
+    
+    public GLBuffer createUniformBuffer(String name, ByteBuffer data, boolean dynamic) {
+        if (!uniformBuffers.containsKey(name)) {
+            GLBuffer buf = new GLBuffer(GL31.GL_UNIFORM_BUFFER, dynamic ? GL15.GL_DYNAMIC_DRAW : GL15.GL_STATIC_DRAW, data);
+            addUniformBuffer(name, buf);
+            return buf;
         } else {
             System.err.println("buffer already created " + name);
-        }
-    }
-    
-    public void releaseBuffer(String name) {
-        if(glBuffers.containsKey(name)) {
-            GLBuffer buf = glBuffers.remove(name);
-            buffersToRelease.add(buf);
-        }  else {
-            System.err.println("no such buffer: " + name);
+            return uniformBuffers.get(name);
         }
     }
 
-    public void setUniformBuffer(String name, ByteBuffer data) {
-        if (glBuffers.containsKey(name)) {
-            GLBuffer buf = glBuffers.get(name);
-            buf.data = data;
-            if (!buffersChanged.contains(buf)) {
-                buffersChanged.add(buf);
-            }
-        } else {
-            System.err.println("no such buffer: " + name);
-        }
-    }
-
-    public Integer getBufferHandle(String name) {
-        if (glBuffers.containsKey(name)) {
-            return glBuffers.get(name).bufferHandle;
-        } else {
-            System.err.println("no such buffer: " + name);
-            return -1;
-        }
-    }
-
-    public static GLTYPE parseGLType(String type) {
+    public static int parseGLType(String type) {
         switch (type) {
             case "i":
-                return GLTYPE.GLINT;
+                return GL_INT;
             case "d":
-                return GLTYPE.GLDOUBLE;
+                return GL_DOUBLE;
             case "s":
-                return GLTYPE.GLSHORT;
+                return GL_SHORT;
             case "b":
-                return GLTYPE.GLBYTE;
+                return GL_BYTE;
             case "f":
             default:
-                return GLTYPE.GLFLOAT;
+                return GL_FLOAT;
         }
     }
 
-    public enum GLTYPE {
-
-        GLINT(4, GL11.GL_INT),
-        GLDOUBLE(8, GL11.GL_DOUBLE),
-        GLSHORT(2, GL11.GL_SHORT),
-        GLBYTE(1, GL11.GL_BYTE),
-        GLFLOAT(4, GL11.GL_FLOAT);
-
-        private final int size;
-        private final int glRef;
-
-        GLTYPE(int size, int glRef) {
-            this.size = size;
-            this.glRef = glRef;
-        }
-
-        public int size() {
-            return size;
-        }
-
-        public int glRef() {
-            return glRef;
-        }
-    }
 
 }

@@ -18,13 +18,13 @@ import resource.TextData;
 /**
  *
  * @author Andrew_2
- * 
- * Data representing a GLSL shader for opengl
- * Vertex and Fragment shader compiled from text
- * 
- * Contains an instance of UniformData to allow syncing of uniforms
- * Uniforms should be updated through UniformData
- * To change the set of uniforms, the uniform data must be swapped
+ *
+ * Data representing a GLSL shader for opengl Vertex and Fragment shader
+ * compiled from text
+ *
+ * Contains an instance of UniformData to allow syncing of uniforms Uniforms
+ * should be updated through UniformData To change the set of uniforms, the
+ * uniform data must be swapped
  */
 public class ShaderProgram {
 
@@ -60,7 +60,7 @@ public class ShaderProgram {
     public int getProgram() {
         return program;
     }
-    
+
     public void setUniformData(UniformData uni) {
         this.uniformData = uni;
         uni.updateAll();
@@ -121,11 +121,13 @@ public class ShaderProgram {
 
     protected void update() {
         glUseProgram(getProgram());
-        uniformData.updateUniforms();
+        if (uniformData != null) {
+            uniformData.updateUniforms();
+        }
         String blockName;
-        while((blockName = blockNamesNew.poll()) != null) {
+        while ((blockName = blockNamesNew.poll()) != null) {
             String bufferName = bufferNames.get(blockName);
-            int bufferLocation = RenderManager.getInstance().getBufferHandle(bufferName);
+            int bufferLocation = RenderManager.getInstance().getUniformBuffer(bufferName).getHandle();
             int blockLocation = GL31.glGetUniformBlockIndex(program, blockName);
             blockLocations.put(blockName, blockLocation);
             glBindBufferBase(GL_UNIFORM_BUFFER, 2, bufferLocation);
@@ -142,7 +144,7 @@ public class ShaderProgram {
 
     public int getTextureUnit(String samplerName) {
         Integer texUnit = samplerMap.get(samplerName);
-        if(texUnit == null) {
+        if (texUnit == null) {
             texUnit = texUnitUsed;
             if (texUnit == 8) {
                 System.out.println("TOO MANY TEXTURES");
@@ -152,7 +154,7 @@ public class ShaderProgram {
         }
         return texUnit;
     }
-    
+
     public boolean isCompiled() {
         return compiled;
     }

@@ -9,8 +9,10 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
+import java.util.List;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.lwjgl.BufferUtils;
 
 /**
  *
@@ -21,7 +23,7 @@ import org.joml.Matrix4f;
 public class BufferTest {
     
     public static void main(String[] args) {
-        float[] fdata = new float[] {.1454f, .2f, .3f, .4f};
+        /*float[] fdata = new float[] {.1454f, .2f, .3f, .4f};
         int[] idata = new int[] {1,2,3,4};
         ByteBuffer data = ByteBuffer.wrap(new byte[]{(byte)62, (byte)20, (byte)-29, (byte)-67, (byte)62, (byte)76,
             (byte)-52, (byte)-51, (byte)62, (byte)-103, (byte)-103, (byte)-102, (byte)62, (byte)-52, (byte)-52,(byte)-51, 
@@ -82,7 +84,22 @@ public class BufferTest {
             
         }
             System.out.println();
-       
+       */
+        
+        float[] fdata = {1, 2, 3, 4};
+        ByteBuffer bdata = BufferUtils.createByteBuffer(fdata.length * Float.BYTES);
+        bdata.asFloatBuffer().put(fdata);
+        bdata.rewind();
+        for(int i = 0; i < fdata.length; i++) {
+            System.out.println(bdata.getFloat()); 
+        }
+        bdata.rewind();
+        float[] copydata = bdata.asFloatBuffer().array();
+        copydata[3] = 2;
+        for(int i = 0; i < copydata.length; i++) {
+            System.out.println(copydata[i]); 
+        }
+        List<float[]> f;
     }
     
 }

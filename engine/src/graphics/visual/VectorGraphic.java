@@ -1,6 +1,10 @@
-package graphics;
+package graphics.visual;
 
 import game.Component;
+import graphics.RenderManager;
+import graphics.Renderable;
+import graphics.ShaderProgram;
+import graphics.UniformData;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -78,7 +82,7 @@ public class VectorGraphic extends Renderable {
         glEnableVertexAttribArray(vertexLocation);
         glVertexAttribPointer(vertexLocation, 3, GL_FLOAT, false, 0, 0);
 
-        pvHandle = ud.createUniform("projection_model", UniformData.GL_UNIFORM_TYPE.GL_m4fv, 1);
+        //pvHandle = ud.createUniform("projection_model", UniformData.GL_UNIFORM_TYPE.GL_m4fv, 1);
     }
 
     @Override
