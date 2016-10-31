@@ -10,18 +10,21 @@ import org.lwjgl.BufferUtils;
 /**
  *
  * @author Andrew_2
- * 
- * A GLBuffer with structure for setting data
- * Can represent lists of interleaved data
+ *
+ * AttributeDataStruct is an AttributeData with added functionality for writing to the buffer
+ * It represents vertex attributes with an array or buffer backing.
  * A set of interleaved data is called a grouping
+ * A component of a grouping is one part of the interleaved data.
+ *  (Eg if the grouping has normal and vertex data interleaved, it has a normal component and vertex component)
+ *
  * 
+ * As of now, this class is not functional
  */
-public class GLBufferStruct extends GLBuffer {
+public class AttributeDataStruct extends AttributeData {
 
+    
     private int capacity;
-    private int currentGrouping;
-    private int currentIndex;
-    private boolean buferLast;
+    private boolean bufferLast;
 
     //values of internal index used for other lists
     //indexed by grouping number, entries indexed by entry number
@@ -43,7 +46,43 @@ public class GLBufferStruct extends GLBuffer {
 
     private boolean compiled;
 
-    public GLBufferStruct(int target, int usage) {
+    private final List<Grouping> groupings;
+    
+    //a grouping must be able to write its data to the buffer
+    private static interface Grouping {
+        public int getSize();
+        public int getNumComponents();
+        public void write(ByteBuffer data);
+    }
+    
+    //A BufferGrouping writes data to the GLBuffer from an another existing buffer
+    private static class BufferGrouping implements Grouping {
+        ByteBuffer bufferData;
+        int size;
+        
+        public void BufferGrouping(ByteBuffer bufferData) {
+            this.bufferData = bufferData;
+            this.size = bufferData.capacity();
+        }
+        
+        @Override
+        public void write(ByteBuffer data) {
+            data.put(bufferData);
+        }
+    }
+    
+    //An ArrayGrouping will write data to the GLBuffer from an array
+    private static class ArrayGrouping implements Grouping {
+
+        @Override
+        public void write(ByteBuffer data) {
+            throw new UnsupportedOperationException("Not supported yet."); 
+        }
+        
+    }
+    
+    
+    public AttributeDataStruct(int target, int usage) {
         super(target, usage);
         currentGrouping = -1;
         currentIndex = -1;
@@ -65,12 +104,16 @@ public class GLBufferStruct extends GLBuffer {
         groupingIndices.add(new ArrayList<>());
         groupingSize.add(size);
         currentGrouping++;
-        buferLast = false;
+        bufferLast = false;
     }
 
     //create an entry of float data with "components" number of elements
     //returns the float[] backing this
     public float[] createFloatData(int components) {
+        if (bufferLast) {
+            System.err.println("cannot create a float data with a ByteBuffer bound");
+            return null;
+        }
         compiled = false;
         currentIndex++;
         groupingIndices.get(currentGrouping).add(currentIndex);
@@ -84,6 +127,10 @@ public class GLBufferStruct extends GLBuffer {
     //create an entry of int data with "components" number of elements
     //returns the int[] backing this
     public int[] createIntData(int components) {
+        if (bufferLast) {
+            System.err.println("cannot create a int data with a ByteBuffer bound");
+            return null;
+        }
         compiled = false;
         currentIndex++;
         groupingIndices.get(currentGrouping).add(currentIndex);
@@ -93,13 +140,14 @@ public class GLBufferStruct extends GLBuffer {
         intData.put(currentIndex, data);
         return data;
     }
-    
+
     //create a grouping with backing of the supllied buffer
     //no other entries may be added to this grouping
     public void createGrouping(ByteBuffer buffer) {
+        
         compiled = false;
         createGrouping(buffer.capacity());
-        buferLast = true;
+        bufferLast = true;
         currentIndex++;
         groupingIndices.get(currentGrouping).add(currentIndex);
         this.components.add(1);
@@ -130,43 +178,46 @@ public class GLBufferStruct extends GLBuffer {
 
     //update the buffer from the backings for each grouping and update in on the GPU
     @Override
-    protected void updateBuffer() {
-        if (!compiled) {
-            return;
-        }
+    public void updateBuffer() {
+        if (compiled) {
 
-        ByteBuffer data = getData();
+            if(isChanged()) {
+            ByteBuffer data = getData();
+            
+            data.rewind();
 
-        for (int group = 0; group < groupingIndices.size(); group++) {
-            int gSize = groupingSize.get(group);
-            List<Integer> indices = groupingIndices.get(group);
-            if(types.get(indices.get(0)) == 2) {
-                int index = indices.get(0);
-                data.put(bufferData.get(index));
-            } else {
-            for (int i = 0; i < gSize; i++) {
-                for (int j = 0; j < indices.size(); j++) {
-                    int index = indices.get(j);
-                    int components = this.components.get(index);
-                    switch (types.get(index)) {
-                        case 0:
-                            float[] fdata = floatData.get(index);
-                            for (int k = 0; k < components; k++) {
-                                data.putFloat(fdata[i * components + k]);
+            for (int group = 0; group < groupingIndices.size(); group++) {
+                int gSize = groupingSize.get(group);
+                List<Integer> indices = groupingIndices.get(group);
+                if (types.get(indices.get(0)) == 2) {
+                    int index = indices.get(0);
+                    data.put(bufferData.get(index));
+                } else {
+                    for (int i = 0; i < gSize; i++) {
+                        for (int j = 0; j < indices.size(); j++) {
+                            int index = indices.get(j);
+                            int components = this.components.get(index);
+                            switch (types.get(index)) {
+                                case 0:
+                                    float[] fdata = floatData.get(index);
+                                    for (int k = 0; k < components; k++) {
+                                        data.putFloat(fdata[i * components + k]);
+                                    }
+                                    break;
+                                case 1:
+                                    int[] idata = intData.get(index);
+                                    for (int k = 0; k < components; k++) {
+                                        data.putFloat(idata[i * components + k]);
+                                    }
+                                    break;
                             }
-                            break;
-                        case 1:
-                            int[] idata = intData.get(index);
-                            for (int k = 0; k < components; k++) {
-                                data.putFloat(idata[i * components + k]);
-                            }
-                            break;
+                        }
                     }
                 }
             }
+            data.rewind();
             }
         }
-        data.rewind();
 
         super.updateBuffer();
     }
@@ -183,5 +234,4 @@ public class GLBufferStruct extends GLBuffer {
         }
         return bytes;
     }
-
 }

@@ -86,7 +86,7 @@ public class BufferTest {
             System.out.println();
        */
         
-        float[] fdata = {1, 2, 3, 4};
+        /*float[] fdata = {1, 2, 3, 4};
         ByteBuffer bdata = BufferUtils.createByteBuffer(fdata.length * Float.BYTES);
         bdata.asFloatBuffer().put(fdata);
         bdata.rewind();
@@ -99,7 +99,11 @@ public class BufferTest {
         for(int i = 0; i < copydata.length; i++) {
             System.out.println(copydata[i]); 
         }
-        List<float[]> f;
+        List<float[]> f;*/
+        
     }
+    
+    
+    
     
 }

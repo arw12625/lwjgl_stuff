@@ -1,10 +1,14 @@
 package graphics.ui;
 
 import game.Component;
+import graphics.AttributeData;
+import graphics.GLType;
 import graphics.RenderManager;
 import graphics.Renderable;
 import graphics.ShaderProgram;
 import graphics.UniformData;
+import graphics.VAORender;
+import graphics.VertexArrayObject;
 import io.GLFWManager;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -54,10 +58,10 @@ public class TextDisplay extends Renderable {
     private int charNum;
 
     private int capacity;
-    private int arrayHandle;
-    private int bufferHandle;
     private ShaderProgram sp;
     private UniformData ud;
+    private VAORender vao;
+    private AttributeData attr;
     private ByteBuffer buffer;
 
     private float lineSpacing;
@@ -84,7 +88,13 @@ public class TextDisplay extends Renderable {
         xPos = BufferUtils.createFloatBuffer(1);
         yPos = BufferUtils.createFloatBuffer(1);
 
+        vao = new VAORender();
+        attr = new AttributeData(vao, "text", GL_DYNAMIC_DRAW);
         buffer = BufferUtils.createByteBuffer(capacity * NUM_BYTES);
+        attr.setData(buffer);
+        attr.createAttribute("vertex_position", GLType.GL_2fv);
+        attr.createAttribute("vertex_tex_coord", GLType.GL_2fv);
+        
         quad = STBTTAlignedQuad.create();
         sp = ShaderProgram.loadProgram("shaders/text.vs", "shaders/text.fs");
         ud = new UniformData(sp);
@@ -94,29 +104,17 @@ public class TextDisplay extends Renderable {
 
     @Override
     public void initRender() {
-        sp.compileShader();
+        sp.createAndCompileShader();
         
-        arrayHandle = GL30.glGenVertexArrays();
-        glBindVertexArray(arrayHandle);
-        bufferHandle = glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferHandle);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, capacity * NUM_BYTES, GL15.GL_STREAM_DRAW);
+        vao.generateVAO();
+        vao.setShaderAttributeLocations(sp);
 
-        int vertexLocation = glGetAttribLocation(sp.getProgram(), "vertex_position");
-        glEnableVertexAttribArray(vertexLocation);
-        glVertexAttribPointer(vertexLocation, 2, GL_FLOAT, false, 2 * 2 * 4, 0);
-
-        int coordLocation = glGetAttribLocation(sp.getProgram(), "vertex_tex_coord");
-        glEnableVertexAttribArray(coordLocation);
-        glVertexAttribPointer(coordLocation, 2, GL_FLOAT, false, 2 * 2 * 4, 2 * 4);
 
     }
 
     @Override
     public void render() {
 
-        glBindVertexArray(arrayHandle);
-        RenderManager.getInstance().useShaderProgram(sp);
 
         //if the text has changed, all characters are recalculated
         if (changed) {
@@ -165,22 +163,27 @@ public class TextDisplay extends Renderable {
                 float newX1 = quad.x1() / xRes * 2 - 1f;
                 float newY0 = -quad.y0() / yRes * 2 + 1f;
                 float newY1 = -quad.y1() / yRes * 2 + 1f;
+                
                 buffer.putFloat(newX0).putFloat(newY0).putFloat(quad.s0()).putFloat(quad.t0());
                 buffer.putFloat(newX0).putFloat(newY1).putFloat(quad.s0()).putFloat(quad.t1());
                 buffer.putFloat(newX1).putFloat(newY1).putFloat(quad.s1()).putFloat(quad.t1());
                 buffer.putFloat(newX1).putFloat(newY0).putFloat(quad.s1()).putFloat(quad.t0());
                 
+                        
+                        
                 xPos.put(0, xPos.get(0) + characterSpacing);
                 i++;
                 charNum++;
             }
 
             buffer.rewind();
-
-            glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferHandle);
-            GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, buffer.capacity(), buffer);
+            
+            attr.setChanged();
             changed = false;
         }
+        
+        RenderManager.getInstance().useAndUpdateVAO(vao);
+        RenderManager.getInstance().useShaderProgram(sp);
 
         glDrawArrays(GL_QUADS, 0, charNum * 4);
     }

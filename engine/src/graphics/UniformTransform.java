@@ -14,46 +14,108 @@ public class UniformTransform implements UniformStruct {
 
     private Matrix4f initTrans;
     private Transform t;
-    private Matrix4f pvmMat, viewMat;
+    private Matrix4f pMat, pvmMat, vmMat;
     private Matrix3f normalMat;
-    
-    private static final String pvmName = "proj_view_model",
-            vmName = "view_model", normalName = "normal_mat";
-    
-    public UniformTransform(Matrix4f initTrans, Transform t) {
+
+    private final boolean initTransEnabled, pMatEnabled, pvmMatEnabled, vmMatEnabled, normalEnabled;
+
+    private static final String pName = "proj",
+            pvmName = "proj_view_model", vmName = "view_model",
+            normalName = "normal_mat";
+
+    public UniformTransform(Transform t, Matrix4f initTrans,
+            boolean initTransEnabled, boolean pMatEnabled,
+            boolean pvmMatEnabled, boolean vmMatEnabled, 
+            boolean normalEnabled) {
+
         this.t = t;
         this.initTrans = initTrans;
-        
-        pvmMat = new Matrix4f();
-        viewMat = new Matrix4f();
-        normalMat = new Matrix3f();
+
+        this.initTransEnabled = initTransEnabled;
+        this.pMatEnabled = pMatEnabled;
+        this.pvmMatEnabled = pvmMatEnabled;
+        this.vmMatEnabled = vmMatEnabled;
+        this.normalEnabled = normalEnabled;
+
+        if (pMatEnabled) {
+            pMat = new Matrix4f();
+        }
+        if (pvmMatEnabled) {
+            pvmMat = new Matrix4f();
+        }
+        if (vmMatEnabled || normalEnabled) {
+            vmMat = new Matrix4f();
+        }
+        if (normalEnabled) {
+            normalMat = new Matrix3f();
+        }
     }
-    
+
+    public UniformTransform(Transform t, boolean pvmMatEnabled,
+            boolean vmMatEnabled, boolean normalEnabled) {
+        this(t, null, false, false, pvmMatEnabled, vmMatEnabled, normalEnabled);
+
+    }
+
+    public UniformTransform(Transform t) {
+        this(t, true, true, true);
+    }
+
+    public UniformTransform(Transform t, Matrix4f initTrans) {
+        this(t, initTrans, true, false, true, true, true);
+    }
+
     @Override
     public void createUniformStruct(UniformData parent) {
-        parent.createUniform(pvmName, graphics.GLType.GL_m4fv, 1);
-        parent.createUniform(vmName, graphics.GLType.GL_m4fv, 1);
-        parent.createUniform(normalName, graphics.GLType.GL_m3fv, 1);
+        if (pMatEnabled) {
+            parent.createUniform(pName, graphics.GLType.GL_m4fv, 1);
+        }
+        if (pvmMatEnabled) {
+            parent.createUniform(pvmName, graphics.GLType.GL_m4fv, 1);
+        }
+        if (vmMatEnabled) {
+            parent.createUniform(vmName, graphics.GLType.GL_m4fv, 1);
+        }
+        if (normalEnabled) {
+            parent.createUniform(normalName, graphics.GLType.GL_m3fv, 1);
+        }
     }
-    
+
     @Override
     public void updateUniformStruct(UniformData parent) {
         Matrix4f transMat = t.toMatrix();
-        transMat.mul(initTrans);
-        RenderManager.getInstance().getProjectionViewMatrix().mul(transMat, pvmMat);
+        if (initTransEnabled) {
+            transMat.mul(initTrans);
+        }
 
-        RenderManager.getInstance().getViewMatrix().mul(transMat, viewMat);
+        if (pMatEnabled) {
+            pMat.set(RenderManager.getInstance().getProjectionMatrix());
+            int pID = parent.getUniform(pName);
+            parent.setUniform(pID, pMat);
+        }
 
-        normalMat.set(viewMat);
-        normalMat.invert().transpose();
+        if (pvmMatEnabled) {
+            RenderManager.getInstance().getProjectionViewMatrix().mul(transMat, pvmMat);
+            int pvmID = parent.getUniform(pvmName);
+            parent.setUniform(pvmID, pvmMat);
+        }
+
+        if (vmMatEnabled || normalEnabled) {
+            RenderManager.getInstance().getViewMatrix().mul(transMat, vmMat);
+        }
         
-        int pvmID = parent.getUniform(pvmName);
-        int vmID = parent.getUniform(vmName);
-        int normalID = parent.getUniform(normalName);
-        
-        parent.setUniform(pvmID, pvmMat);
-        parent.setUniform(vmID, viewMat);
-        parent.setUniform(normalID, normalMat);
+        if(vmMatEnabled) {
+            int vmID = parent.getUniform(vmName);
+            parent.setUniform(vmID, vmMat);
+        }
+
+        if (normalEnabled) {
+            normalMat.set(vmMat);
+            normalMat.invert().transpose();
+            int normalID = parent.getUniform(normalName);
+            parent.setUniform(normalID, normalMat);
+        }
+
     }
-    
+
 }

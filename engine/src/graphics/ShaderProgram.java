@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
@@ -31,6 +32,7 @@ public class ShaderProgram {
     private String vertexText;
     private String fragmentText;
     private int program;
+    private boolean created;
     private boolean compiled;
 
     private Map<String, Integer> uniformLocations;
@@ -38,10 +40,13 @@ public class ShaderProgram {
 
     private Map<String, Integer> blockLocations;    //map from block name to location
     private Map<String, String> bufferNames;        //map from block name to buffer name
-    private Queue<String> blockNamesNew;             //a list of unitialized blocks
+    private Queue<String> blockNamesNew;            //a list of unitialized blocks
 
     private Map<String, Integer> samplerMap;
     private int texUnitUsed;
+
+    private Map<String, Integer> attributeLocations;
+    private int nextAttribLoc;
 
     public ShaderProgram(String vertexText, String fragmentText) {
         this.vertexText = vertexText;
@@ -55,6 +60,9 @@ public class ShaderProgram {
 
         samplerMap = new HashMap<>();
         texUnitUsed = 0;
+
+        attributeLocations = new HashMap<>();
+        nextAttribLoc = 0;
     }
 
     public int getProgram() {
@@ -66,17 +74,25 @@ public class ShaderProgram {
         uni.updateAll();
     }
 
-    public static ShaderProgram loadProgram(String vertexSource, String fragmentSource) {
-        String vertexResource = TextData.loadText(vertexSource);
-        String fragmentResource = TextData.loadText(fragmentSource);
+    public static ShaderProgram loadProgram(String vertexPath, String fragmentPath) {
+        String vertexResource = TextData.loadText(vertexPath);
+        String fragmentResource = TextData.loadText(fragmentPath);
         ShaderProgram sp = new ShaderProgram(vertexResource, fragmentResource);
 
         return sp;
     }
 
+    public int createShader() {
+        if(!created) {
+            this.program =  glCreateProgram();
+            created = true;
+        }
+        return this.program;
+    }
     public int compileShader() {
         if (!compiled) {
-            int shaderProgram = glCreateProgram();
+            this.compiled = true;
+            int shaderProgram = this.program;
             int vertexShader = glCreateShader(GL_VERTEX_SHADER);
             int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -105,22 +121,69 @@ public class ShaderProgram {
             glDeleteShader(fragmentShader);
 
             this.program = shaderProgram;
-            this.compiled = true;
         }
         return getProgram();
     }
+    
+    public int createAndCompileShader() {
+        createShader();
+        compileShader();
+        return this.program;
+    }
+    
+    protected int getAttributeLocation(String name) {
+        Integer location = attributeLocations.get(name);
+        if (location == null) {
+            if (!compiled) {
+                location = nextAttribLocation();
+                bindAttributeLocation(name, location);
+            } else {
+                location = GL20.glGetAttribLocation(program, name);
+                if(location == -1) {
+                    System.err.println("Attribute not defined in shader: " + name);
+                } else {
+                    addAttributeEntry(name, location);
+                }
+            }
+        }
+        return location;
+    }
+
+    protected void bindAttributeLocation(String name, int loc) {
+        GL20.glBindAttribLocation(program, loc, name);
+        addAttributeEntry(name, loc);
+    }
+    
+    private void addAttributeEntry(String name, int location) {
+        attributeLocations.put(name, location);
+        nextAttribLoc = Math.max(location + 1, nextAttribLoc);
+    }
+    
+    private int nextAttribLocation() {
+        return nextAttribLoc;
+
+    }
+    
+    public void setAttributeDataLocations(AttributeData a) {
+        for(Entry<String, Integer> e : attributeLocations.entrySet()) {
+            a.setAttributeLocation(e.getKey(), e.getValue());
+        }
+    }
+    
 
     protected int getUniformLocation(String name) {
         Integer loc = uniformLocations.get(name);
         if (loc == null) {
             loc = GL20.glGetUniformLocation(getProgram(), name);
+            if(loc == -1) {
+                System.out.println("Uniform not found: " + name);
+            }
             uniformLocations.put(name, loc);
         }
         return loc;
     }
 
     protected void update() {
-        glUseProgram(getProgram());
         if (uniformData != null) {
             uniformData.updateUniforms();
         }

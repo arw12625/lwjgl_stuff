@@ -70,7 +70,7 @@ public class VectorGraphic extends Renderable {
     @Override
     public void initRender() {
 
-        sp.compileShader();
+        sp.createAndCompileShader();
 
         arrayHandle = GL30.glGenVertexArrays();
         glBindVertexArray(arrayHandle);

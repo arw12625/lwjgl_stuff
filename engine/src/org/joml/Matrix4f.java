@@ -1188,6 +1188,20 @@ public class Matrix4f implements Externalizable {
         arr[offset+15] = m33;
         return this;
     }
+    
+
+    public void getScaling(Vector3f scale) {
+        scale.x = (float)Math.sqrt(m00 * m00 + m10 * m10 + m20 * m20);
+        scale.y = (float)Math.sqrt(m01 * m01 + m11 * m11 + m21 * m21);
+        scale.z = (float)Math.sqrt(m02 * m02 + m12 * m12 + m22 * m22);
+    }
+
+    public void getTranslation(Vector3f translation) {
+        translation.x = m30;
+        translation.y = m31;
+        translation.z = m32;
+    }
+    
 
     /**
      * Set all the values within this matrix to <code>0</code>.

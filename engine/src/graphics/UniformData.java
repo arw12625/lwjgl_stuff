@@ -2,6 +2,7 @@ package graphics;
 
 import geometry.Material;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +21,10 @@ import org.lwjgl.opengl.GL20;
  * @author Andrew_2
  * 
  * An interface for setting the uniform variables within shaders
- * Each UniformData belongs to a ShaderProgram
+ * Each UniformData can only be used with one ShaderProgram (owner)
+ * This is as the locations of variables depend upon the shader
+ * Before use in setting uniforms, an instance must be bound to its shader
+ * with 
  * 
  */
 public class UniformData {
@@ -180,6 +184,7 @@ public class UniformData {
 
     public void setUniform(int index, ByteBuffer data) {
         ByteBuffer tmp = data.slice();
+        tmp.order(ByteOrder.LITTLE_ENDIAN);
         tmp.limit(uniforms.get(index).getByteSize());
         prepareUniformData(index);
         data.put(tmp);

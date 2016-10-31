@@ -10,14 +10,28 @@ convertModels();
 
 createLighting();
 
-createHud();
+//createHud();
 
 createModels();
 
-for(var i = 0; i < 10; i++) {
-   visual.ParticleEmitter.createEmit(obj, "part " + i, 50, new joml.Vector3f(10 * (Math.random()-.5), 10 * (Math.random()-.5), 10 * (Math.random()-.5)));
+var numberOfParticles = 600;
+var numberOfEmitters = 1;
+//var particleEngine = particle.SimpleParticleEmitter.createParticleEngine(obj, "partEng", numberOfParticles * numberOfEmitters);
+
+for(var i = 0; i < numberOfEmitters; i++) {
+   // particle.HardCodedParticleEmitter.createEmit(obj, "part " + i, numberOfParticles, new joml.Vector3f(i*7,0,0));
+   //particle.SimpleParticleEmitter.createParticleEmitter(obj,"part " + i, numberOfParticles, new joml.Vector3f(0,0,0), particleEngine);
+   //particle.SimpleParticleEmitter.createParticleEmitter(obj,"part " + i, numberOfParticles, new joml.Vector3f(10 * (Math.random()-.5), 10 * (Math.random()-.5), 10 * (Math.random()-.5)), particleEngine);
+   
 }
 
+var texParticleEngine = particle.TexturedParticleEmitter.createParticleEngine(obj, "partEngTex", numberOfParticles * numberOfEmitters);
+
+for(var i = 0; i < numberOfEmitters; i++) {
+  particle.TexturedParticleEmitter.createParticleEmitter(obj,"part " + i, numberOfParticles, new joml.Vector3f(10 * (Math.random()-.5), 10 * (Math.random()-.5), 10 * (Math.random()-.5)), texParticleEngine);
+  //particle.TexturedParticleEmitter.createParticleEmitter(obj,"part " + i*2, numberOfParticles, new joml.Vector3f(), texParticleEngine); 
+}
+//visual.HeightMap.createHeightMap(obj, 100, 100, 5, 5);
 print("Game.js End");
 
 
@@ -39,10 +53,10 @@ function createLighting() {
     var specular = new joml.Vector3f(0.1, 0.1, 0.1);
     //lighting.addDirLight(dir, ambient, diffuse, specular);
 
-    var dir1 = new joml.Vector3f(1, 0, 0);
+    var dir1 = new joml.Vector3f(.707, -.707, 0);
     var ambient1 = new joml.Vector3f(0.1, .1, .1);
     var diffuse1 = new joml.Vector3f(0.8, .8, .8);
-    var specular1 = new joml.Vector3f(0.1, .1, .1);
+    var specular1 = new joml.Vector3f(0.01, .01, .01);
     lighting.addDirLight(dir1, ambient1, diffuse1, specular1);
 
     var counter = 0;
@@ -50,18 +64,18 @@ function createLighting() {
         counter++;
         dir.x = -Math.cos(counter / 50);
         dir.z = -Math.sin(counter / 50);
-        dir1.x = Math.cos(counter / 500);
-        dir1.z = Math.sin(counter / 500);
+        dir1.x = Math.cos(counter / 500) * .707;
+        dir1.z = Math.sin(counter / 500) * .707;
     });
 
 }
 
 function createHud() {
 
-    /*var tex = resource.TextureData.loadTextureResource("misc_models/tex.png").getPath();
+    var tex = resource.TextureData.loadTextureResource("misc_models/tex.png").getPath();
     h = new ui.FlatTexture();
     renderManager.add(h);
-    //h.addTexture(tex, 0, 0, 1, 1, 0, 0, 0.1, 0.1);*/
+    h.addTexture(tex, 0, 0, 1, 1, 0, 0, 0.1, 0.1);
 
     
 

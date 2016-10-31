@@ -11,15 +11,18 @@ import org.joml.Vector4f;
  * @author Andy
  * 
  * Transform represents a transformation in physical space
- * This is represented as a position and orientation
- * 
+ * This is represented as a position and orientation and scaling
+ * Transformation order is scaling then rotation then translation
  * 
  */
 public class Transform extends Component {
     
     Vector3f position;
+    Vector3f scale;
     Quaternionf orientation;
     private Matrix4f transform;
+    
+    private static final Vector3f unitScale = new Vector3f(1,1,1);
     
     public Transform() {
         this(new Vector3f());
@@ -43,12 +46,16 @@ public class Transform extends Component {
         this(parent, position, new Quaternionf());
     }
     public Transform(Component parent, Transform t) {
-        this(parent, t.getPosition(), t.getOrientation());
+        this(parent, t.getPosition(), t.getOrientation(), t.getScale());
     }
     public Transform(Component parent, Vector3f position, Quaternionf orientation) {
+        this(parent, position, orientation, unitScale);
+    }
+    public Transform(Component parent, Vector3f position, Quaternionf orientation, Vector3f scale) {
         super(parent);
         this.position = position;
         this.orientation = orientation;
+        this.scale = scale;
         transform = new Matrix4f();
     }
 
@@ -60,6 +67,14 @@ public class Transform extends Component {
         this.position = v;
     }
 
+    public Vector3f getScale() {
+        return scale;
+    }
+    
+    public void setScale(Vector3f scale) {
+        this.scale = scale;
+    }
+    
     public Quaternionf getOrientation() {
         return orientation;
     }
@@ -81,6 +96,7 @@ public class Transform extends Component {
     }
     
     public Matrix4f toMatrix() {
+        transform.scaling(scale);
         orientation.get(transform);
         transform.setTranslation(position);
         return transform;
@@ -88,14 +104,16 @@ public class Transform extends Component {
     
     public static Transform createTransform(Component parent, Matrix4f mat) {
         
-        Vector4f pos4 = new Vector4f();
-        mat.getColumn(3, pos4);
-        Vector3f pos3 = new Vector3f(pos4.x, pos4.y, pos4.z);
+        Vector3f pos3 = new Vector3f();
+        mat.getTranslation(pos3);
         
         Quaternionf orientation = new Quaternionf();
         mat.get(orientation);
         
-        return new Transform(parent, pos3, orientation);
+        Vector3f scale = new Vector3f();
+        mat.getScaling(scale);
+        
+        return new Transform(parent, pos3, orientation, scale);
     }
     
 }

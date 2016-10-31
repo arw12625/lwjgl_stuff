@@ -51,6 +51,7 @@ public class ScriptManager {
         eval("joml = JavaImporter(Packages.org.joml)");
         
         eval("visual = JavaImporter(Packages.graphics.visual)");
+        eval("particle = JavaImporter(Packages.graphics.particle)");
         eval("ui = JavaImporter(Packages.graphics.ui)");
         eval("collada = JavaImporter(Packages.resource.collada)");
         

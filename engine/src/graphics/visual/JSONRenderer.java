@@ -9,6 +9,7 @@ import graphics.Renderable;
 import graphics.ShaderProgram;
 import graphics.UniformData;
 import graphics.UniformTransform;
+import graphics.VertexArrayObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -85,24 +86,27 @@ public class JSONRenderer extends Renderable {
             JSONObject obj = jsonMeshes.getJSONObject(i);
             ShaderProgram sp = shaders.get(obj.getInt("shader"));
             Mesh m = new Mesh(sp, obj, model);
-            UniformTransform ut = new UniformTransform(JSONData.parseMat(obj.getString("transform")), t);
+            UniformTransform ut = new UniformTransform(t, JSONData.parseMat(obj.getString("transform")));
             m.getUniforms().addStruct(ut);
             m.getUniforms().setUniformBuffer("lightBlock", "lightBlock");
             meshes.add(m);
         }
+        
     }
 
     @Override
     public void initRender() {
+        
         for (ShaderProgram sp : shaders) {
-            sp.compileShader();
+            sp.createAndCompileShader();
         }
 
         for (Mesh m : meshes) {
-            glUseProgram(m.sp.getProgram());
+            RenderManager.getInstance().useShaderProgram(m.sp);
+            
             //create a new VAO for each renderer
-            m.vaoHandle = GL30.glGenVertexArrays();
-            glBindVertexArray(m.vaoHandle);
+            m.vao.generateVAO();
+            RenderManager.getInstance().useAndUpdateVAO(m.vao);
             m.vertexHandle = glGenBuffers();
             glBindBuffer(GL_ARRAY_BUFFER, m.vertexHandle);
             int vertexBufferIndex = m.json.getInt("vertices");
@@ -128,19 +132,22 @@ public class JSONRenderer extends Renderable {
                 m.mat = materials.get(materialName);
                 m.uniforms.addMaterialUniforms(m.mat);
             }
+            
         }
 
     }
 
     @Override
     public void render() {
+        
         for (Mesh m : meshes) {
-            glBindVertexArray(m.vaoHandle);
+            RenderManager.getInstance().useAndUpdateVAO(m.vao);
             m.sp.setUniformData(m.uniforms);
             RenderManager.getInstance().useShaderProgram(m.sp);
             //for now only tris are considered
             GL11.glDrawElements(GL_TRIANGLES, m.numberFaces * 3, GL_UNSIGNED_INT, 0);
         }
+        
     }
 
     public List<ShaderProgram> getShaderPrograms() {
@@ -166,7 +173,7 @@ public class JSONRenderer extends Renderable {
 
         ShaderProgram sp;
         UniformData uniforms;
-        int vaoHandle;
+        VertexArrayObject vao;
         int vertexHandle;
         int faceHandle;
         List<Integer> attributeLocations;
@@ -181,6 +188,7 @@ public class JSONRenderer extends Renderable {
             this.json = json;
             attributeLocations = new ArrayList<>();
             this.parent = parent;
+            vao = new VertexArrayObject();
         }
 
         public UniformData getUniforms() {

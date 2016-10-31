@@ -30,4 +30,12 @@ public class Utilities {
     }
 
     
+    public static void printByteBuffer(ByteBuffer buf) {
+        ByteBuffer copy = buf.duplicate();
+        while(copy.hasRemaining()) {
+            System.out.print(copy.get() + " ");
+        }
+        System.out.println();
+    }
+    
 }

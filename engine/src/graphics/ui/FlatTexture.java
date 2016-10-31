@@ -1,10 +1,14 @@
 package graphics.ui;
 
 import game.Component;
+import graphics.AttributeData;
+import graphics.GLType;
 import graphics.RenderManager;
 import graphics.Renderable;
 import graphics.ShaderProgram;
 import graphics.UniformData;
+import graphics.VAORender;
+import graphics.VertexArrayObject;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +23,6 @@ import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glGetAttribLocation;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import org.lwjgl.opengl.GL30;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import resource.Resource;
 import resource.TextureData;
 
@@ -35,11 +38,10 @@ public class FlatTexture extends Renderable {
 
     private List<String> textures;
     private List<Boolean> enabled;
-    private ConcurrentLinkedQueue<Integer> changed;
 
     private int capacity;
-    private int arrayHandle;
-    private int bufferHandle;
+    private VAORender vao;
+    private AttributeData attr;
     private ShaderProgram sp;
     private UniformData ud;
     private int numTex;
@@ -56,9 +58,15 @@ public class FlatTexture extends Renderable {
         super(parent);
         this.capacity = capacity;
         textures = new ArrayList<>();
-        changed = new ConcurrentLinkedQueue<>();
         enabled = new ArrayList<>();
-        buffer = BufferUtils.createByteBuffer(capacity * NUM_BYTES);
+        buffer = BufferUtils.createByteBuffer(this.capacity * NUM_BYTES);
+        
+        vao = new VAORender();
+        attr = new AttributeData(vao, "texture", GL_DYNAMIC_DRAW);
+        attr.setData(buffer);
+        attr.createAttribute("vertex_position", GLType.GL_2fv);
+        attr.createAttribute("vertex_tex_coord", GLType.GL_2fv);
+        
         sp = ShaderProgram.loadProgram("shaders/flatTexture.vs", "shaders/texture.fs");
         ud = new UniformData(sp);
         sp.setUniformData(ud);
@@ -88,7 +96,6 @@ public class FlatTexture extends Renderable {
     //coordinates are given as normalized opengl coordinates (-1 to 1)
     public void addTexture(String texture, float x, float y, float width, float height, float ux1, float uy1, float ux2, float uy2) {
         textures.add(texture);
-        changed.add(numTex);
         enabled.add(Boolean.TRUE);
 
         buffer.position(numTex * NUM_BYTES);
@@ -104,35 +111,18 @@ public class FlatTexture extends Renderable {
     @Override
     public void initRender() {
 
-        sp.compileShader();
+        sp.createAndCompileShader();
 
-        arrayHandle = GL30.glGenVertexArrays();
-        glBindVertexArray(arrayHandle);
-        bufferHandle = glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferHandle);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, capacity * NUM_BYTES, GL_DYNAMIC_DRAW);
-
-        int vertexLocation = glGetAttribLocation(sp.getProgram(), "vertex_position");
-        glEnableVertexAttribArray(vertexLocation);
-        glVertexAttribPointer(vertexLocation, 2, GL_FLOAT, false, 2 * 2 * 4, 0);
-
-        int coordLocation = glGetAttribLocation(sp.getProgram(), "vertex_tex_coord");
-        glEnableVertexAttribArray(coordLocation);
-        glVertexAttribPointer(coordLocation, 2, GL_FLOAT, false, 2 * 2 * 4, 2 * 4);
-
+        vao.generateVAO();
+        vao.setShaderAttributeLocations(sp);
     }
 
     @Override
     public void render() {
-        Integer index;
-        while((index = changed.poll()) != null) {
-            buffer.position(index * NUM_BYTES);
-            glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferHandle);
-            GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, NUM_BYTES * index, NUM_BYTES, buffer);
-        }
-        
         buffer.rewind();
-        glBindVertexArray(arrayHandle);
+        attr.setChanged();
+        RenderManager.getInstance().useAndUpdateVAO(vao);
+        
         String lastTex = "";
         for (int i = 0; i < numTex; i++) {
             if(enabled.get(i)) {

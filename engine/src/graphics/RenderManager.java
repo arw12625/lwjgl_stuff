@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.joml.AxisAngle4f;
@@ -21,7 +22,9 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import static org.lwjgl.opengl.GL15.glGenBuffers;
 import org.lwjgl.opengl.GL20;
+import static org.lwjgl.opengl.GL20.glUseProgram;
 import org.lwjgl.opengl.GL30;
+import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import org.lwjgl.opengl.GL31;
 import static org.lwjgl.opengl.GL31.GL_UNIFORM_BUFFER;
 import resource.Resource;
@@ -61,6 +64,9 @@ public class RenderManager {
     private Matrix4f projectionViewMatrix;
     private ViewPoint vp;
 
+    //the last Vertex Array Object in use
+    private VertexArrayObject vao;
+    
     //the last shader program used
     private ShaderProgram shaderProgram;
 
@@ -73,16 +79,14 @@ public class RenderManager {
 
     //named uniform opengl buffers
     private Map<String, GLBuffer> uniformBuffers;
-    //opengl buffers
-    private List<GLBuffer> glBuffers;
-    //buffers to upload
-    private Queue<GLBuffer> buffersToUpload;
 
     private int resX, resY;
 
     public static final int HUD_Z_INDEX = 1000;
     public static final int DEFAULT_Z_INDEX = 0;
     public static final int PRE_RENDER_Z_INDEX = -1000;
+    
+    public static final int restartIndex = -1;
 
     private RenderManager() {
         toAdd = new ConcurrentLinkedQueue<>();
@@ -99,8 +103,6 @@ public class RenderManager {
         textureHandles = new HashMap<>();
 
         uniformBuffers = new HashMap<>();
-        glBuffers = new ArrayList<>();
-        buffersToUpload = new ConcurrentLinkedQueue<>();
 
         Quaternionf q = new Quaternionf();
         q.set(new AxisAngle4f(0, 0, 0, 1));
@@ -117,6 +119,8 @@ public class RenderManager {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        GL31.glPrimitiveRestartIndex(restartIndex);
+        
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
@@ -136,7 +140,7 @@ public class RenderManager {
     public void render() {
         prepareTextures();
         updateViewMat();
-        updateBuffers();
+        updateUniformBuffers();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
@@ -205,7 +209,7 @@ public class RenderManager {
             int id = GL11.glGenTextures();
             textureHandles.put(name, id);
 
-            bind(id);
+            RenderManager.this.bindTexture(id);
             GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
             glTexImage2D(GL_TEXTURE_2D, 0, texture.getType().getDataType(), texture.getImageWidth(), texture.getImageHeight(),
                     0, texture.getType().getGLType(), GL_UNSIGNED_BYTE, texture.getBuffer());
@@ -219,24 +223,40 @@ public class RenderManager {
 
     //must be called in a thread with opengl context
     public void useShaderProgram(ShaderProgram sp) {
-        shaderProgram = sp;
+        if(shaderProgram != sp) {
+            shaderProgram = sp;
+            glUseProgram(sp.getProgram());
+        }
         sp.update();
     }
-
-    public void bind(int textureID) {
-        bind(textureID, 0);
+    //must be called in a thread with opengl context
+    public void useVAO(VertexArrayObject vao) {
+        if(this.vao != vao) {
+            this.vao=vao;
+            glBindVertexArray(vao.getHandle());
+        }
+    }
+    
+    //must be called in a thread with opengl context
+    public void useAndUpdateVAO(VertexArrayObject vao) {
+        useVAO(vao);
+        vao.update();
     }
 
-    public void bind(int textureID, int textureUnit) {
+    public void bindTexture(int textureID) {
+        bindTexture(textureID, 0);
+    }
+
+    public void bindTexture(int textureID, int textureUnit) {
         GL13.glActiveTexture(GL13.GL_TEXTURE0 + textureUnit);
         glBindTexture(GL_TEXTURE_2D, textureID);
     }
 
     public void bind(String name, int textureUnit) {
-        bind(getTextureHandle(name), textureUnit);
+        bindTexture(getTextureHandle(name), textureUnit);
     }
 
-    public void unbind() {
+    public void unbindTexture() {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
@@ -281,31 +301,16 @@ public class RenderManager {
         return uniformBuffers.get(name);
     }
 
-    private void updateBuffers() {
-        GLBuffer buf;
-        while ((buf = buffersToUpload.poll()) != null) {
-            buf.create();
-            glBuffers.add(buf);
+    private void updateUniformBuffers() {
+        Iterator<GLBuffer> iter = uniformBuffers.values().iterator();
+        while(iter.hasNext()) {
+            GLBuffer buf = iter.next();
+            buf.updateBuffer();
         }
-        Iterator<GLBuffer> iter = glBuffers.iterator();
-        while (iter.hasNext()) {
-            buf = iter.next();
-            if (buf.isToRelease()) {
-                buf.destroy();
-                iter.remove();
-            } else if (buf.isChanged()) {
-                buf.updateBuffer();
-            }
-        }
-    }
-
-    public void addGLBuffer(GLBuffer buf) {
-            buffersToUpload.add(buf);
     }
     
     public void addUniformBuffer(String name, GLBuffer buf) {
         uniformBuffers.put(name, buf);
-        addGLBuffer(buf);
     }
     
     public GLBuffer createUniformBuffer(String name, ByteBuffer data, boolean dynamic) {
@@ -317,6 +322,10 @@ public class RenderManager {
             System.err.println("buffer already created " + name);
             return uniformBuffers.get(name);
         }
+    }
+    
+    public int getRestartIndex() {
+        return restartIndex;
     }
 
     public static int parseGLType(String type) {
