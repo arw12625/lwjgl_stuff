@@ -1,7 +1,7 @@
 package game;
 
-import io.GLFWManager;
 import graphics.RenderManager;
+import io.GLFWManager;
 import resource.ResourceManager;
 import script.ScriptManager;
 import sound.SoundManager;

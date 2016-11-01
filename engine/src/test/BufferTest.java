@@ -1,19 +1,5 @@
 package test;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.channels.FileChannel;
-import java.util.List;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
-import org.lwjgl.BufferUtils;
-
 /**
  *
  * @author Andrew_2

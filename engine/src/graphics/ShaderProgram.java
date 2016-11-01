@@ -1,16 +1,27 @@
 package graphics;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import org.lwjgl.opengl.GL20;
-
-import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL20.GL_COMPILE_STATUS;
+import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
+import static org.lwjgl.opengl.GL20.GL_LINK_STATUS;
+import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
+import static org.lwjgl.opengl.GL20.glAttachShader;
+import static org.lwjgl.opengl.GL20.glCompileShader;
+import static org.lwjgl.opengl.GL20.glCreateProgram;
+import static org.lwjgl.opengl.GL20.glCreateShader;
+import static org.lwjgl.opengl.GL20.glDeleteShader;
+import static org.lwjgl.opengl.GL20.glGetProgramInfoLog;
+import static org.lwjgl.opengl.GL20.glGetProgrami;
+import static org.lwjgl.opengl.GL20.glGetShaderInfoLog;
+import static org.lwjgl.opengl.GL20.glGetShaderi;
+import static org.lwjgl.opengl.GL20.glLinkProgram;
+import static org.lwjgl.opengl.GL20.glShaderSource;
 import static org.lwjgl.opengl.GL30.glBindBufferBase;
 import org.lwjgl.opengl.GL31;
 import static org.lwjgl.opengl.GL31.GL_UNIFORM_BUFFER;

@@ -1,10 +1,8 @@
 package graphics;
 
-import game.Component;
 import geometry.Transform;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import update.Updateable;
 
 /**
  *

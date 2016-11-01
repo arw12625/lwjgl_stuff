@@ -1,21 +1,22 @@
 package io;
 
 import game.Game;
-import graphics.ui.Console;
-import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.*;
-
-import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.lwjgl.BufferUtils;
-
-import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.system.MemoryUtil.*;
+import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWKeyCallback;
+import org.lwjgl.glfw.GLFWMouseButtonCallback;
+import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.glfw.GLFWWindowCloseCallback;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
+import static org.lwjgl.opengl.GL11.GL_FALSE;
+import static org.lwjgl.opengl.GL11.GL_TRUE;
+import static org.lwjgl.opengl.GL11.glClearColor;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  *

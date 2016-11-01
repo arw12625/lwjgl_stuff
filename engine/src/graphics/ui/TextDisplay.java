@@ -8,30 +8,17 @@ import graphics.Renderable;
 import graphics.ShaderProgram;
 import graphics.UniformData;
 import graphics.VAORender;
-import graphics.VertexArrayObject;
 import io.GLFWManager;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
-import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL11.GL_QUADS;
 import static org.lwjgl.opengl.GL11.glDrawArrays;
-import org.lwjgl.opengl.GL15;
 import static org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW;
-import static org.lwjgl.opengl.GL15.glBindBuffer;
-import static org.lwjgl.opengl.GL15.glGenBuffers;
-import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glGetAttribLocation;
-import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
-import org.lwjgl.opengl.GL30;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import org.lwjgl.stb.STBTTAlignedQuad;
-import org.lwjgl.stb.STBTTBakedChar;
 import org.lwjgl.stb.STBTruetype;
-import resource.BufferData;
 import resource.ResourceManager;
-import resource.TextureData;
 
 /**
  *
@@ -89,11 +76,11 @@ public class TextDisplay extends Renderable {
         yPos = BufferUtils.createFloatBuffer(1);
 
         vao = new VAORender();
-        attr = new AttributeData(vao, "text", GL_DYNAMIC_DRAW);
+        attr = AttributeData.createAttributeData(vao, "text", GL_DYNAMIC_DRAW);
         buffer = BufferUtils.createByteBuffer(capacity * NUM_BYTES);
         attr.setData(buffer);
-        attr.createAttribute("vertex_position", GLType.GL_2fv);
-        attr.createAttribute("vertex_tex_coord", GLType.GL_2fv);
+        attr.createAttribute("vertex_position", GLType.GL_2fv, 0, 16);
+        attr.createAttribute("vertex_tex_coord", GLType.GL_2fv, 8, 16);
         
         quad = STBTTAlignedQuad.create();
         sp = ShaderProgram.loadProgram("shaders/text.vs", "shaders/text.fs");

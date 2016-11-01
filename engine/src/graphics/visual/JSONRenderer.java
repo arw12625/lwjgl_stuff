@@ -1,7 +1,6 @@
 package graphics.visual;
 
 import game.Component;
-import resource.JSONData;
 import geometry.Material;
 import geometry.Transform;
 import graphics.RenderManager;
@@ -28,13 +27,10 @@ import static org.lwjgl.opengl.GL15.glBufferData;
 import static org.lwjgl.opengl.GL15.glGenBuffers;
 import org.lwjgl.opengl.GL20;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glUseProgram;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
-import org.lwjgl.opengl.GL30;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import resource.JSONData;
 import resource.ResourceManager;
 import resource.TextureData;
-import update.UpdateManager;
 
 /**
  *

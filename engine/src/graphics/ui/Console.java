@@ -1,17 +1,13 @@
 package graphics.ui;
 
 import game.Component;
-import game.Game;
 import graphics.RenderManager;
 import graphics.Renderable;
 import io.GLFWManager;
 import io.KeyCallback;
-import io.TextCallback;
 import io.TextInput;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import javax.script.ScriptException;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFW;

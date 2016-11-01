@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
  */
 public interface Bufferable {
     
+    public int getSize();
     public void write(ByteBuffer b);
     
 }

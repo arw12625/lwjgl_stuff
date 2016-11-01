@@ -1,9 +1,8 @@
 package test;
 
-import game.*;
+import game.Game;
+import game.GameObject;
 import script.ScriptManager;
-import update.UpdateManager;
-import update.Updateable;
 
 /**
  *

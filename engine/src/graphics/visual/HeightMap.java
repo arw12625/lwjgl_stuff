@@ -3,7 +3,6 @@ package graphics.visual;
 import game.Component;
 import geometry.Transform;
 import graphics.AttributeData;
-import graphics.GLBuffer;
 import graphics.GLType;
 import graphics.RenderManager;
 import graphics.Renderable;
@@ -11,7 +10,6 @@ import graphics.ShaderProgram;
 import graphics.UniformData;
 import graphics.UniformTransform;
 import graphics.VAORender;
-import graphics.VertexArrayObject;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -87,15 +85,15 @@ public class HeightMap extends Renderable {
         intView.rewind();
         
         vao = new VAORender();
-        staticAttr = new AttributeData(vao, "static", GL15.GL_STATIC_DRAW);
-        staticAttr.createAttribute("position", GLType.GL_2fv);
+        staticAttr = AttributeData.createAttributeData(vao, "static", GL15.GL_STATIC_DRAW);
+        staticAttr.createAttribute("position", GLType.GL_2fv, 0, 8);
         staticAttr.setData(coordData);
         
         vao.createElementArray(GL15.GL_STATIC_DRAW, indexData);
        
-        dynamicAttr = new AttributeData(vao, "dynamic", GL15.GL_DYNAMIC_DRAW);
-        dynamicAttr.createAttribute("height", GLType.GL_1fv);
-        dynamicAttr.createAttribute("vertex_normal", GLType.GL_3fv);
+        dynamicAttr = AttributeData.createAttributeData(vao, "dynamic", GL15.GL_DYNAMIC_DRAW);
+        dynamicAttr.createAttribute("height", GLType.GL_1fv, 0, 16);
+        dynamicAttr.createAttribute("vertex_normal", GLType.GL_3fv, 4, 16);
         dynamicAttr.setData(dynamicData);
         
         this.t = t;

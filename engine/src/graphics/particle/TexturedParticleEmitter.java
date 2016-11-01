@@ -4,22 +4,16 @@ import game.Component;
 import graphics.AttributeData;
 import graphics.GLType;
 import graphics.RenderManager;
-import graphics.Renderable;
 import graphics.ShaderProgram;
-import graphics.UniformData;
 import graphics.VAORender;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.List;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL42;
 import update.UpdateManager;
-import util.Bufferable;
-import util.BufferableHelper;
 
 /**
  *
@@ -122,17 +116,17 @@ public class TexturedParticleEmitter extends ParticleEmitter {
         baseDataBuffer.asFloatBuffer().put(baseData);
         baseDataBuffer.rewind();
 
-        AttributeData baseAttr = new AttributeData(vao, "base", GL15.GL_STATIC_DRAW);
+        AttributeData baseAttr = AttributeData.createAttributeData(vao, "base", GL15.GL_STATIC_DRAW);
         baseAttr.setData(baseDataBuffer);
-        baseAttr.createAttribute("base", GLType.GL_3fv);
-        baseAttr.createAttribute("vertex_tex_coord", GLType.GL_2fv);
+        baseAttr.createAttribute("base", GLType.GL_3fv, 0, 20);
+        baseAttr.createAttribute("vertex_tex_coord", GLType.GL_2fv, 12, 20);
 
         ByteBuffer dynamicData = BufferUtils.createByteBuffer(capacity * BYTESIZE * VERTS_PER_PART);
-        AttributeData dynamicAttr = new AttributeData(vao, "dynamic", GL15.GL_STREAM_DRAW, 1);
+        AttributeData dynamicAttr = AttributeData.createAttributeData(vao, "dynamic", GL15.GL_STREAM_DRAW, 1);
         dynamicAttr.setData(dynamicData);
-        dynamicAttr.createAttribute("isize", GLType.GL_1fv);
-        dynamicAttr.createAttribute("center", GLType.GL_3fv);
-        dynamicAttr.createAttribute("tex_offset", GLType.GL_2fv);
+        dynamicAttr.createAttribute("isize", GLType.GL_1fv, 0, 24);
+        dynamicAttr.createAttribute("center", GLType.GL_3fv, 4, 24);
+        dynamicAttr.createAttribute("tex_offset", GLType.GL_2fv, 16,24);
 
         ParticleEngine engine = new ParticleEngine(parent, name, vao);
         RenderManager.getInstance().add(engine);
@@ -152,6 +146,9 @@ public class TexturedParticleEmitter extends ParticleEmitter {
             b.putFloat(texOffsetX).putFloat(texOffsetY);
         }
 
-
+        public int getSize() {
+            return (1+3+2)*Float.BYTES;
+        }
+        
     }
 }

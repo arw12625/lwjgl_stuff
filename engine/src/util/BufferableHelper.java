@@ -1,10 +1,7 @@
 package util;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
 import java.util.List;
-import org.lwjgl.BufferUtils;
 
 /**
  *
@@ -26,6 +23,7 @@ public class BufferableHelper<T extends Bufferable> {
             bufferable.write(buffer);
         }
         buffer.rewind();
+        
     }
     
     public ByteBuffer getByteBuffer() {

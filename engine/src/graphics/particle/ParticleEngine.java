@@ -1,12 +1,9 @@
 package graphics.particle;
 
 import game.Component;
-import graphics.AttributeData;
 import graphics.RenderManager;
 import graphics.Renderable;
 import graphics.VAORender;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 

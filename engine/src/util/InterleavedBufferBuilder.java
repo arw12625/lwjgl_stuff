@@ -2,9 +2,7 @@ package util;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.lwjgl.BufferUtils;
 
 /**
@@ -99,6 +97,11 @@ public class InterleavedBufferBuilder implements Bufferable {
     
     public ByteBuffer getData() {
         return data;
+    }
+
+    @Override
+    public int getSize() {
+        return capacity;
     }
     
     private static enum InterleavedType {

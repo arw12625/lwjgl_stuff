@@ -4,8 +4,6 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL10;
-import org.lwjgl.openal.ALDevice;
-import org.lwjgl.openal.ALUtil;
 import static org.lwjgl.stb.STBVorbis.stb_vorbis_close;
 import static org.lwjgl.stb.STBVorbis.stb_vorbis_get_info;
 import static org.lwjgl.stb.STBVorbis.stb_vorbis_get_samples_short_interleaved;

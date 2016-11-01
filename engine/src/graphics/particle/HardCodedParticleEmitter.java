@@ -8,14 +8,11 @@ import graphics.Renderable;
 import graphics.ShaderProgram;
 import graphics.UniformData;
 import graphics.VAORender;
-import graphics.VertexArrayObject;
 import java.nio.ByteBuffer;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import org.lwjgl.opengl.GL31;
 import util.InterleavedBufferBuilder;
 
@@ -74,9 +71,9 @@ public class HardCodedParticleEmitter extends Renderable {
         
         vao = new VAORender();
         
-        baseAttr = new AttributeData(vao, "base", GL15.GL_STATIC_DRAW);
+        baseAttr = AttributeData.createAttributeData(vao, "base", GL15.GL_STATIC_DRAW);
         baseAttr.setData(baseDataBuffer);
-        baseAttr.createAttribute("base", GLType.GL_3fv);
+        baseAttr.createAttribute("base", GLType.GL_3fv, 0, 12);
         
         currentNumber = maxNumber - 1;
         tmpLoc = maxNumber - 1;
@@ -94,11 +91,11 @@ public class HardCodedParticleEmitter extends Renderable {
         colors = ibb.createFloatData(4);
         ibb.compile();
         
-        dynamicAttr = new AttributeData(vao, "dynamic", GL15.GL_STREAM_DRAW, 1);
+        dynamicAttr = AttributeData.createAttributeData(vao, "dynamic", GL15.GL_STREAM_DRAW, 1);
         dynamicAttr.setData(ibb.getData());
-        dynamicAttr.createAttribute("isize", GLType.GL_1fv);
-        dynamicAttr.createAttribute("center", GLType.GL_3fv);
-        dynamicAttr.createAttribute("icolor", GLType.GL_4fv);
+        dynamicAttr.createAttribute("isize", GLType.GL_1fv, 0, 32);
+        dynamicAttr.createAttribute("center", GLType.GL_3fv, 4, 32);
+        dynamicAttr.createAttribute("icolor", GLType.GL_4fv, 16, 32);
     }
 
     @Override

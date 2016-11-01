@@ -1,6 +1,5 @@
 package graphics.particle;
 
-import java.nio.ByteBuffer;
 import util.Bufferable;
 
 /**

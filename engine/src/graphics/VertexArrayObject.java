@@ -1,9 +1,5 @@
 package graphics;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 
 /**

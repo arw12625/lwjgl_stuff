@@ -8,21 +8,13 @@ import graphics.Renderable;
 import graphics.ShaderProgram;
 import graphics.UniformData;
 import graphics.VAORender;
-import graphics.VertexArrayObject;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import org.lwjgl.BufferUtils;
-import static org.lwjgl.opengl.GL11.*;
-import org.lwjgl.opengl.GL15;
+import static org.lwjgl.opengl.GL11.GL_QUADS;
+import static org.lwjgl.opengl.GL11.glDrawArrays;
 import static org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW;
-import static org.lwjgl.opengl.GL15.glBindBuffer;
-import static org.lwjgl.opengl.GL15.glGenBuffers;
-import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glGetAttribLocation;
-import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
-import org.lwjgl.opengl.GL30;
 import resource.Resource;
 import resource.TextureData;
 
@@ -62,10 +54,10 @@ public class FlatTexture extends Renderable {
         buffer = BufferUtils.createByteBuffer(this.capacity * NUM_BYTES);
         
         vao = new VAORender();
-        attr = new AttributeData(vao, "texture", GL_DYNAMIC_DRAW);
+        attr = AttributeData.createAttributeData(vao, "texture", GL_DYNAMIC_DRAW);
         attr.setData(buffer);
-        attr.createAttribute("vertex_position", GLType.GL_2fv);
-        attr.createAttribute("vertex_tex_coord", GLType.GL_2fv);
+        attr.createAttribute("vertex_position", GLType.GL_2fv, 0, 16);
+        attr.createAttribute("vertex_tex_coord", GLType.GL_2fv, 8, 16);
         
         sp = ShaderProgram.loadProgram("shaders/flatTexture.vs", "shaders/texture.fs");
         ud = new UniformData(sp);

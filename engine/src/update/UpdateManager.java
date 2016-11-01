@@ -8,7 +8,6 @@ import game.Game;
 import java.util.ArrayList;
 import java.util.List;
 import org.lwjgl.glfw.GLFW;
-import script.GameScript;
 
 /**
  *

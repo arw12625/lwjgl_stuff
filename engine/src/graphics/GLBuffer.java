@@ -1,13 +1,8 @@
 package graphics;
 
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import static org.lwjgl.opengl.GL11.GL_INT;
 import org.lwjgl.opengl.GL15;
 import static org.lwjgl.opengl.GL15.glGenBuffers;
-import org.lwjgl.opengl.GL31;
 
 /**
  *

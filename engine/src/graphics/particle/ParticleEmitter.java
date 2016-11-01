@@ -3,7 +3,6 @@ package graphics.particle;
 import game.Component;
 import geometry.Transform;
 import graphics.AttributeData;
-import graphics.GLType;
 import graphics.RenderManager;
 import graphics.Renderable;
 import graphics.ShaderProgram;
@@ -13,10 +12,7 @@ import graphics.VAORender;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
 import util.BufferableHelper;
-import util.Utilities;
 
 /**
  *
