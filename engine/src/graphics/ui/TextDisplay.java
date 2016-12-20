@@ -108,8 +108,8 @@ public class TextDisplay extends Renderable {
             String copy = text.toString();
             int length = copy.length();
 
-            float xRes = GLFWManager.getInstance().getResX();
-            float yRes = GLFWManager.getInstance().getResY();
+            float xRes = RenderManager.getInstance().getWindowWidth();
+            float yRes = RenderManager.getInstance().getWindowHeight();
             xPos.put(0, x);
             yPos.put(0, y);
             

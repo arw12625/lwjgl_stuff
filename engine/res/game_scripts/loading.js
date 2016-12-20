@@ -1,17 +1,10 @@
 
-
-var fpsDisp = ui.TextDisplay.createTextDisplay(obj, "fonts/arial.ttf", 24, 200, 200, 20, 430, 20, new joml.Vector4f(1,0,1,1));
-    addUpdate(function (delta) {
-     fpsDisp.setText("FPS: " + Math.floor(1000.0 / delta));
-});
-     
-    
+var fps = scriptManager.loadScript(obj, "game_scripts/fps_display.js");
 var movement = scriptManager.loadScript(obj, "game_scripts/viewpoint.js");
 var sceneScript = scriptManager.loadScript(obj, "game_scripts/game.js").getScriptObject();
 //scriptManager.loadScript(obj, "game_scripts/sound_test.js");
 
-var console = ui.Console.createConsole(obj);
-console.getScript().getScriptObject().scene = obj;
+var conosoleScript = scriptManager.loadScript(obj, "game_scripts/create_console.js");
 
 
 var spheres = sceneScript.getSpheres();
@@ -26,12 +19,17 @@ var key = new io.KeyCallback(obj, {
             }
         }
     });
-glfwManager.addKeyCallback(key);
+    while(!window.isCreated()){}
+    
+window.addKeyCallback(key);
 
 return {
     getFPSDisp : function() {return fpsDisp;},
     getConsole : function() {return console;},
-    getSceneScript : function() {return sceneScript;}
+    getSceneScript : function() {return sceneScript;},
     
+    addStartupScript : function(path) {
+        scriptManager.loadScript(obj, path);
+    }
     
 };

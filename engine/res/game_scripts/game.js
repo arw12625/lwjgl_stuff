@@ -107,7 +107,7 @@ function createModels() {
                 }
             }
         });
-        glfwManager.addKeyCallback(modelAddKey);
+        window.addKeyCallback(modelAddKey);
 
     }
 }

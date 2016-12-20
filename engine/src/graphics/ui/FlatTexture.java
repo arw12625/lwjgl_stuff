@@ -75,10 +75,10 @@ public class FlatTexture extends Renderable {
 
     //the coordinates x,y are given in pixels and the width and height of the image are used
     public void addTexture(String name, TextureData texture, int x, int y) {
-        addTexture(name, x / RenderManager.getInstance().getResX() * 2 - 1,
-                y / RenderManager.getInstance().getResY() * -2 + 1,
-                texture.getImageWidth() / RenderManager.getInstance().getResX(),
-                texture.getImageHeight() / RenderManager.getInstance().getResY());
+        addTexture(name, x / RenderManager.getInstance().getWindowWidth() * 2 - 1,
+                y / RenderManager.getInstance().getWindowHeight() * -2 + 1,
+                texture.getImageWidth() / RenderManager.getInstance().getWindowWidth(),
+                texture.getImageHeight() / RenderManager.getInstance().getWindowHeight());
     }
 
     public void addTexture(String texture, float x, float y, float width, float height) {

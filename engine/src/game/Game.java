@@ -19,14 +19,14 @@ import update.UpdateManager;
  * Game also serves as the root component
  * 
  */
-public class Game extends Component{
+public class Game extends Component {
 
     public GLFWManager glfwManager;
     public UpdateManager updateManager;
-    public RenderManager renderManager;
     public ResourceManager resourceManager;
     public ScriptManager scriptManager;
     public SoundManager soundManager;
+    public RenderManager renderManager;
     
     private boolean requestQuit = false;
     private boolean initializing = true;
@@ -43,6 +43,12 @@ public class Game extends Component{
     private Game() {
         super(null);
     }
+    
+    public void start() {
+        create();
+        run();
+        //destroy();
+    }
 
     //initialize the core managers in the specific order required
     public void create() {
@@ -52,6 +58,7 @@ public class Game extends Component{
         this.resourceManager = ResourceManager.getInstance();
         resourceManager.start();
         this.renderManager = RenderManager.getInstance();
+        renderManager.start();
         this.scriptManager = ScriptManager.getInstance();
         this.soundManager = SoundManager.getInstance();
     }
@@ -59,7 +66,6 @@ public class Game extends Component{
     public void run() {
         initializing = false;
         while(running()) {
-            renderManager.render();
             glfwManager.refresh();
         }
         close();

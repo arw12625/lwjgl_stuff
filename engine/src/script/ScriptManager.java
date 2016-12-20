@@ -63,6 +63,7 @@ public class ScriptManager {
         //add singleton managers to simplified names
         engine.put("gameInst", Game.getInstance());
         engine.put("renderManager", graphics.RenderManager.getInstance());
+        engine.put("window", graphics.RenderManager.getInstance().getWindow());
         engine.put("resourceManager", resource.ResourceManager.getInstance());
         engine.put("scriptManager", this);
         engine.put("soundManager", sound.SoundManager.getInstance());

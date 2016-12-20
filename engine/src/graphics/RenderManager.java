@@ -1,6 +1,7 @@
 package graphics;
 
 import io.GLFWManager;
+import io.Window;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.joml.AxisAngle4f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -35,7 +38,7 @@ import resource.TextureData;
  *
  *
  */
-public class RenderManager {
+public class RenderManager extends Thread {
 
     private static RenderManager instance;
 
@@ -74,13 +77,20 @@ public class RenderManager {
     //named uniform opengl buffers
     private Map<String, GLBuffer> uniformBuffers;
 
-    private int resX, resY;
-
+    public static final int DEFAULT_WINDOW_WIDTH = 640;
+    public static final int DEFAULT_WINDOW_HEIGHT = 480;
+    
     public static final int HUD_Z_INDEX = 1000;
     public static final int DEFAULT_Z_INDEX = 0;
     public static final int PRE_RENDER_Z_INDEX = -1000;
     
     public static final int restartIndex = -1;
+    
+    public static final int RENDER_TIME = 1000 / 60;
+    
+    private Window window;
+    private boolean toDestroy;
+    private boolean created;
 
     private RenderManager() {
         toAdd = new ConcurrentLinkedQueue<>();
@@ -98,6 +108,13 @@ public class RenderManager {
 
         uniformBuffers = new HashMap<>();
 
+        window = GLFWManager.getInstance().createWindow("yo", 
+                DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+
+    }
+    
+    public void setupStuff() {
+        
         Quaternionf q = new Quaternionf();
         q.set(new AxisAngle4f(0, 0, 0, 1));
         vp = new ViewPoint(new Vector3f(0, 0, 10), q);
@@ -117,18 +134,43 @@ public class RenderManager {
         
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-        resX = GLFWManager.getInstance().getResX();
-        resY = GLFWManager.getInstance().getResY();
-
     }
 
-    public int getResX() {
-        return resX;
+    public int getWindowWidth() {
+        return window.getWidth();
     }
 
-    public int getResY() {
-        return resY;
+    public int getWindowHeight() {
+        return window.getHeight();
+    }
+    
+    @Override
+    public void run() {
+        
+        //wait for the window to be created
+        while(!window.isCreated()) {
+            Thread.yield();
+        }
+        
+        //then bind the opengl context of the window to the current thread
+        window.bindGLContext();
+        
+        setupStuff();
+        created = true;
+        
+        while(!toDestroy) {
+            render();
+            window.swapBuffers();
+            try {
+                Thread.sleep(RENDER_TIME);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(RenderManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    public boolean isCreated() {
+        return created;
     }
 
     public void render() {
@@ -316,6 +358,10 @@ public class RenderManager {
             System.err.println("buffer already created " + name);
             return uniformBuffers.get(name);
         }
+    }
+    
+    public Window getWindow() {
+        return window;
     }
     
     public int getRestartIndex() {

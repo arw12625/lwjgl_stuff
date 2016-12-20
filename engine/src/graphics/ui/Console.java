@@ -46,13 +46,14 @@ public class Console extends Renderable {
     public Console(Component parent, TextInput textInput, int charWidth, int charHeight, int fontSize) {
         super(parent);
         this.keyCallback = new ConsoleKeyCallback();
-        GLFWManager.getInstance().addKeyCallback(keyCallback);
+        RenderManager.getInstance().getWindow().addKeyCallback(keyCallback);
         this.charWidth = charWidth;
         this.charHeight = charHeight;
         charCapacity = charWidth * charHeight;
         //this.display = TextDisplay.createTextDisplay(this, "fonts/cour.ttf", 24, GLFWManager.getInstance().getResX(), GLFWManager.getInstance().getResY(), 20, 25, charCapacity, new Vector4f(1, 0, 1, 1));
         FontData f = ResourceManager.getInstance().loadResource(defaultFont, true, new FontData("consoleFont", fontSize, 512, 512, defaultColor)).getData();
-        this.display = new TextDisplay(parent, f, 30, 40, GLFWManager.getInstance().getResX(), GLFWManager.getInstance().getResY(), charCapacity);
+        this.display = new TextDisplay(parent, f, 30, 40, RenderManager.getInstance().getWindowWidth(),
+                RenderManager.getInstance().getWindowHeight(), charCapacity);
         TextureData.loadTextureResource("console/console.png");
         textures = new FlatTexture(this, 10);
         textures.addTexture("console/console.png", -1, 1, 2, 2);
@@ -182,7 +183,7 @@ public class Console extends Renderable {
     }
 
     public static Console createConsole(Component parent, int fontSize, int charWidth, int charHeight) {
-        TextInput ti = GLFWManager.getInstance().getDefaultTextInput();
+        TextInput ti = RenderManager.getInstance().getWindow().getDefaultTextInput();
         Console c = new Console(parent, ti, charWidth, charHeight, fontSize);
         c.enable(false);
         RenderManager.getInstance().add(c);

@@ -5,7 +5,11 @@ var z = 0;
 var speed = 0.1;
 var mouseSpeedX = -0.01;
 var mouseSpeedY = -0.01;
+while(!renderManager.isCreated()) {
+print("EHEH");}
 var vp = renderManager.getViewPoint();
+
+while(!window.isCreated()){}
 
 var keys = new KeyCallbackExtender(obj, {
         invoke: function(window, key, scancode, action, mods) {
@@ -28,16 +32,16 @@ var keys = new KeyCallbackExtender(obj, {
             }
         }
 });
-glfwManager.addKeyCallback(keys);
+window.addKeyCallback(keys);
 
-glfwManager.bindCursor();
+window.bindCursor();
 
 var mx = 0;
 var my = 0;
 addUpdate(function(delta) {
     vp.moveLocalCoords(speed*x,speed*y,speed*z);
-    var dy = glfwManager.getDMouseX()*mouseSpeedX;
-    var dx = glfwManager.getDMouseY()*mouseSpeedY;
+    var dy = window.getDMouseX()*mouseSpeedX;
+    var dx = window.getDMouseY()*mouseSpeedY;
     mx+=dx;
     my+=dy;
     if(mx > Math.PI / 2) {
