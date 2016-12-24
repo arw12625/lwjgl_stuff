@@ -26,13 +26,13 @@ public class AttributeData extends GLBuffer {
     }
     
     public static AttributeData createAttributeData(VAORender vao, String name, int usage, int divisor) {
-        AttributeData ad = new AttributeData(name, usage, divisor);
+        AttributeData ad = new AttributeData(name, usage, divisor, vao.getRenderManager());
         vao.addAttributeData(ad);
         return ad;
     }
     
-    protected AttributeData(String name, int usage, int divisor) {
-        super(GL15.GL_ARRAY_BUFFER, usage);
+    protected AttributeData(String name, int usage, int divisor, RenderManager renderManager) {
+        super(GL15.GL_ARRAY_BUFFER, usage, renderManager);
         this.name = name;
         attributes = new HashMap<>();
         this.divisor = divisor;

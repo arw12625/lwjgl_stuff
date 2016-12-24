@@ -1,6 +1,7 @@
 package graphics.particle;
 
 import game.Component;
+import game.StandardGame;
 import graphics.AttributeData;
 import graphics.GLType;
 import graphics.RenderManager;
@@ -69,7 +70,7 @@ public class HardCodedParticleEmitter extends Renderable {
         baseDataBuffer.asFloatBuffer().put(baseData);
         baseDataBuffer.rewind();
         
-        vao = new VAORender();
+        vao = new VAORender(shaderProgram.getRenderManager());
         
         baseAttr = AttributeData.createAttributeData(vao, "base", GL15.GL_STATIC_DRAW);
         baseAttr.setData(baseDataBuffer);
@@ -115,11 +116,11 @@ public class HardCodedParticleEmitter extends Renderable {
     public void render() {
             updateParticles();
         
-        RenderManager.getInstance().useAndUpdateVAO(vao);
+        shaderProgram.getRenderManager().useAndUpdateVAO(vao);
         
-        ud.setUniform(pHandle, RenderManager.getInstance().getProjectionMatrix());
-        ud.setUniform(vHandle, RenderManager.getInstance().getViewMatrix());
-        RenderManager.getInstance().useShaderProgram(shaderProgram);
+        ud.setUniform(pHandle, shaderProgram.getRenderManager().getProjectionMatrix());
+        ud.setUniform(vHandle, shaderProgram.getRenderManager().getViewMatrix());
+        shaderProgram.getRenderManager().useShaderProgram(shaderProgram);
 
         //GL11.glDepthMask(false);
         //GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
@@ -156,18 +157,18 @@ public class HardCodedParticleEmitter extends Renderable {
         colors[i * 4 + 3] = (float)Math.random();
     }
 
-    public static HardCodedParticleEmitter createEmit(Component parent,String name, int numParticles) {
-        return createEmit(parent, name, numParticles, new Vector3f());
+    public static HardCodedParticleEmitter createEmit(Component parent,String name, int numParticles, StandardGame game) {
+        return createEmit(parent, name, numParticles, new Vector3f(), game);
     }
-    public static HardCodedParticleEmitter createEmit(Component parent,String name, int numParticles, Vector3f pos) {
-        ShaderProgram sp = ShaderProgram.loadProgram("shaders/particle.vs", "shaders/particle.fs");
+    public static HardCodedParticleEmitter createEmit(Component parent,String name, int numParticles, Vector3f pos, StandardGame game) {
+        ShaderProgram sp = ShaderProgram.loadProgram("shaders/particle.vs", "shaders/particle.fs", game);
         HardCodedParticleEmitter p = new HardCodedParticleEmitter(parent, name, numParticles, sp, pos);
-        RenderManager.getInstance().add(p);
+        game.getRenderManager().add(p);
         return p;
     }
     
     private void orderParticles() {
-        Vector3f cam = RenderManager.getInstance().getViewPoint().getPosition();
+        Vector3f cam = shaderProgram.getRenderManager().getViewPoint().getPosition();
         float[] cameraPos = {cam.x, cam.y, cam.z};
         for(int i = 0; i < currentNumber; i++) {
             distances[i] = 0;

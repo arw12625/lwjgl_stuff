@@ -37,12 +37,12 @@ public class ColladaModel extends Data {
     }
 
     @Override
-    public void load(String path) {
+    public void load(String path, ResourceManager resourceManager) {
         try {
 
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(ResourceManager.getInstance().getFile(path));
+            Document document = builder.parse(resourceManager.getFile(path));
             document.getDocumentElement().normalize();
             Element collada = (Element) document.getElementsByTagName("COLLADA").item(0);
 
@@ -57,7 +57,7 @@ public class ColladaModel extends Data {
         }
     }
 
-    public void write(String outPath) {
+    public void write(String outPath, ResourceManager resourceManager) {
 
         //instantiate new JSONData
         JSONData modelData = new JSONData(new JSONObject(), new ArrayList<>());
@@ -87,12 +87,12 @@ public class ColladaModel extends Data {
         model.put("shaders", shaders);
         
         //write to file
-        modelData.write(outPath);
+        modelData.write(outPath, resourceManager);
     }
 
-    public static void convertAndExport(String inPath, String outPath) {
-        Resource<ColladaModel> m = ResourceManager.getInstance().loadResource(inPath, new ColladaModel());
-        m.getData().write(outPath);
+    public static void convertAndExport(String inPath, String outPath, ResourceManager resourceManager) {
+        Resource<ColladaModel> m = resourceManager.loadResource(inPath, new ColladaModel());
+        m.getData().write(outPath, resourceManager);
     }
 
     //process library_materials and library_images and library_effects

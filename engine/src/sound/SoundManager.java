@@ -10,7 +10,7 @@ import org.lwjgl.openal.ALDevice;
 /**
  *
  * @author Andrew_2
- * 
+ *
  * SoundManager is an interface with openal allowing basic audio functionality
  * Audio must be loaded into buffers and then attached to sources to play
  */
@@ -22,21 +22,20 @@ public class SoundManager {
     Map<String, Integer> sources;
     Map<String, Integer> buffers;
 
-    private static SoundManager instance;
-
-    public static SoundManager getInstance() {
-        if (instance == null) {
-            instance = new SoundManager();
-        }
-        return instance;
-    }
-
-    private SoundManager() {
+    public SoundManager() {
         sources = new HashMap<>();
         buffers = new HashMap<>();
+
+    }
+
+    public void initialize() {
         context = ALContext.create();
         context.makeCurrent();
+    }
 
+    public void release() {
+        context.destroy();
+        context.getDevice().destroy();
     }
 
     public String loadBuffer(String name, SoundData data) {
@@ -79,14 +78,16 @@ public class SoundManager {
         int handle = sources.get(name);
         AL10.alSource3f(handle, AL10.AL_VELOCITY, x, y, z);
     }
+
     public void setSourceGain(String name, float gain) {
         int handle = sources.get(name);
-            AL10.alSourcef(handle, AL10.AL_GAIN, 1.0f);
+        AL10.alSourcef(handle, AL10.AL_GAIN, 1.0f);
     }
 
     public void setListenerPosition(Vector3f v) {
         setListenerPosition(v.x, v.y, v.z);
     }
+
     public void setListenerPosition(float x, float y, float z) {
         AL10.alListener3f(AL10.AL_POSITION, x, y, z);
     }
@@ -120,7 +121,7 @@ public class SoundManager {
         int handle = sources.get(name);
         AL10.alSourcePlay(handle);
     }
-    
+
     public void restart(String name) {
         int handle = sources.get(name);
         AL10.alSourceRewind(handle);
@@ -135,10 +136,5 @@ public class SoundManager {
     public void stopSource(String name) {
         int handle = sources.get(name);
         AL10.alSourceStop(handle);
-    }
-
-    public void destroy() {
-        context.destroy();
-        context.getDevice().destroy();
     }
 }

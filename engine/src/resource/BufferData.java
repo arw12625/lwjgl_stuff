@@ -19,10 +19,10 @@ public class BufferData extends Data {
     public BufferData(){}
     
     @Override
-    public void load(String path) {
+    public void load(String path, ResourceManager resourceManager) {
         
         try {
-                FileInputStream fis = ResourceManager.getInstance().getFileInputStream(path);
+                FileInputStream fis = resourceManager.getFileInputStream(path);
                 FileChannel fc = fis.getChannel();
 
                 data = BufferUtils.createByteBuffer((int) fc.size() + 1);

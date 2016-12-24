@@ -1,5 +1,5 @@
 
 
 
-console = ui.Console.createConsole(obj);
+console = ui.Console.createConsole(obj, gameInst);
 console.getScript().getScriptObject().scene = obj;

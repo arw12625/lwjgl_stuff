@@ -1,6 +1,7 @@
 package graphics.visual;
 
 import game.Component;
+import game.StandardGame;
 import graphics.RenderManager;
 import graphics.Renderable;
 import graphics.ShaderProgram;
@@ -22,6 +23,7 @@ import static org.lwjgl.opengl.GL20.glGetAttribLocation;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import org.lwjgl.opengl.GL30;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import resource.ResourceManager;
 
 
 /**
@@ -51,7 +53,9 @@ public class VectorGraphic extends Renderable {
     
     public static final int NUM_BYTES = 2 * 3 * Float.BYTES;
     
-    public VectorGraphic(Component parent, int capacity, boolean xray) {
+    
+    public VectorGraphic(Component parent, int capacity, boolean xray, 
+            ShaderProgram sp) {
         super(parent);
         this.capacity = capacity;
         this.xray = xray;
@@ -59,11 +63,22 @@ public class VectorGraphic extends Renderable {
         changed = new ConcurrentLinkedQueue<>();
         buffer = BufferUtils.createByteBuffer(capacity * NUM_BYTES);
         
-        ShaderProgram sp = ShaderProgram.loadProgram("vector.vs", "vector.fs");
         ud = new UniformData(sp);
         sp.setUniformData(ud);
         numVec = 0;
                 
+    }
+    
+    public static VectorGraphic createVectorGraphic(Component parent, int capacity, boolean xray, StandardGame game) {
+        return createVectorGraphic(parent, capacity, xray, game.getRenderManager(), game.getResourceManager());
+    }
+    
+    public static VectorGraphic createVectorGraphic(Component parent, int capacity, boolean xray, RenderManager renderManager, ResourceManager resourceManager) {
+        
+        ShaderProgram sp = ShaderProgram.loadProgram("vector.vs", "vector.fs", 
+                renderManager, resourceManager);
+        VectorGraphic vg = new VectorGraphic(parent, capacity, xray, sp);
+        return vg;
     }
     
     
@@ -97,7 +112,7 @@ public class VectorGraphic extends Renderable {
         buffer.rewind();
         glBindVertexArray(arrayHandle);
                 
-        ud.setUniform(pvHandle, RenderManager.getInstance().getProjectionViewMatrix());
+        ud.setUniform(pvHandle, sp.getRenderManager().getProjectionViewMatrix());
         for (int i = 0; i < numVec; i++) {
                 glDrawArrays(GL11.GL_LINES, i * 2, 2);
         }

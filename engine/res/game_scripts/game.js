@@ -25,10 +25,12 @@ for(var i = 0; i < numberOfEmitters; i++) {
    
 }
 
-var texParticleEngine = particle.TexturedParticleEmitter.createParticleEngine(obj, "partEngTex", numberOfParticles * numberOfEmitters);
+var texParticleEngine = particle.TexturedParticleEmitter.createParticleEngine(obj, "partEngTex", numberOfParticles * numberOfEmitters, gameInst);
 
 for(var i = 0; i < numberOfEmitters; i++) {
-  particle.TexturedParticleEmitter.createParticleEmitter(obj,"part " + i, numberOfParticles, new joml.Vector3f(10 * (Math.random()-.5), 10 * (Math.random()-.5), 10 * (Math.random()-.5)), texParticleEngine);
+  particle.TexturedParticleEmitter.createParticleEmitter(obj,"part " + i, numberOfParticles,
+    new joml.Vector3f(10 * (Math.random()-.5), 10 * (Math.random()-.5), 10 * (Math.random()-.5)),
+    texParticleEngine, gameInst);
   //particle.TexturedParticleEmitter.createParticleEmitter(obj,"part " + i*2, numberOfParticles, new joml.Vector3f(), texParticleEngine); 
 }
 //visual.HeightMap.createHeightMap(obj, 100, 100, 5, 5);
@@ -44,7 +46,7 @@ function convertModels() {
 }
 
 function createLighting() {
-    lighting = new visual.Lighting(gameInst, "lightBlock");
+    lighting = new visual.Lighting(gameInst, "lightBlock", renderManager);
     renderManager.add(lighting);
 
     var dir = new joml.Vector3f(1, 0, 0);
@@ -114,7 +116,7 @@ function createModels() {
 
 function createSimpleRenderer(parent, path) {
     var rend = new game.GameObject(parent);
-    var r = visual.JSONRenderer.createJSONRenderer(rend, path);
+    var r = visual.JSONRenderer.createJSONRenderer(rend, path, gameInst);
     return rend;
 }
 

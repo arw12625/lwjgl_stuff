@@ -9,5 +9,5 @@ package resource;
  */
 public abstract class Data {
     
-    public abstract void load(String path);
+    public abstract void load(String path, ResourceManager resourceManager);
 }

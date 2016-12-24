@@ -16,8 +16,8 @@ public class VAORender extends VertexArrayObject {
     //optional index buffer
     GLBuffer elementArray;
 
-    public VAORender() {
-        super();
+    public VAORender(RenderManager renderManager) {
+        super(renderManager);
         attributeMap = new HashMap<>();
     }
 
@@ -26,7 +26,7 @@ public class VAORender extends VertexArrayObject {
     }
 
     public void createElementArray(int usage, ByteBuffer indices) {
-        elementArray = new GLBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, usage, indices);
+        elementArray = new GLBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, usage, indices, getRenderManager());
         setElementArrayChanged();
     }
 

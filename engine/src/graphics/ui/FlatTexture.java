@@ -21,10 +21,11 @@ import resource.TextureData;
 /**
  *
  * @author Andy
- * 
- * FlatTexture renders a set of textures on the top of the frame, or according to a z-index
- * Multiple textures can be rendered on the same shader and vertex array object
- * 
+ *
+ * FlatTexture renders a set of textures on the top of the frame, or according
+ * to a z-index Multiple textures can be rendered on the same shader and vertex
+ * array object
+ *
  */
 public class FlatTexture extends Renderable {
 
@@ -42,27 +43,61 @@ public class FlatTexture extends Renderable {
     static final int MAX_NUMBER = 100;
     static final int NUM_BYTES = (2 + 2) * 4 * 4;
 
-    public FlatTexture() {
-        this(null, MAX_NUMBER);
+    private static final String defaultVertexShader = "#version 330 core\n"
+            + "\n"
+            + "in vec2 vertex_position;\n"
+            + "in vec2 vertex_tex_coord;\n"
+            + "\n"
+            + "out vec2 tex_coord;\n"
+            + "out vec4 color;\n"
+            + "\n"
+            + "void main() {\n"
+            + "    gl_Position = vec4(vertex_position, 0,1);\n"
+            + "    tex_coord = vertex_tex_coord;\n"
+            + "    color = vec4(1,1,1,1);\n"
+            + "}";
+    private static final String defaultFragmentShader = "#version 330 core\n"
+            + "\n"
+            + "in vec2 tex_coord;\n"
+            + "in vec4 color;\n"
+            + "\n"
+            + "out vec4 fragColor;\n"
+            + "\n"
+            + "uniform sampler2D tex;\n"
+            + "\n"
+            + "void main()\n"
+            + "{   \n"
+            + "    fragColor = texture(tex, tex_coord) * color;\n"
+            + "\n"
+            + "}";
+
+    public FlatTexture(ShaderProgram shaderProgram) {
+        this(null, MAX_NUMBER, shaderProgram);
     }
 
-    public FlatTexture(Component parent, int capacity) {
+    public FlatTexture(Component parent, int capacity, ShaderProgram shaderProgram) {
         super(parent);
         this.capacity = capacity;
         textures = new ArrayList<>();
         enabled = new ArrayList<>();
         buffer = BufferUtils.createByteBuffer(this.capacity * NUM_BYTES);
-        
-        vao = new VAORender();
+
+        vao = new VAORender(shaderProgram.getRenderManager());
         attr = AttributeData.createAttributeData(vao, "texture", GL_DYNAMIC_DRAW);
         attr.setData(buffer);
         attr.createAttribute("vertex_position", GLType.GL_2fv, 0, 16);
         attr.createAttribute("vertex_tex_coord", GLType.GL_2fv, 8, 16);
-        
-        sp = ShaderProgram.loadProgram("shaders/flatTexture.vs", "shaders/texture.fs");
+
+        this.sp = shaderProgram;
+        //sp = ShaderProgram.loadProgram("shaders/flatTexture.vs", "shaders/texture.fs");
         ud = new UniformData(sp);
         sp.setUniformData(ud);
         numTex = 0;
+    }
+
+    public static FlatTexture createFlatTexture(Component parent, int capacity, RenderManager renderManager) {
+        ShaderProgram defaultShader = new ShaderProgram(defaultVertexShader, defaultFragmentShader, renderManager);
+        return new FlatTexture(parent, capacity, defaultShader);
     }
 
     public void addTexture(String textureName) {
@@ -75,10 +110,13 @@ public class FlatTexture extends Renderable {
 
     //the coordinates x,y are given in pixels and the width and height of the image are used
     public void addTexture(String name, TextureData texture, int x, int y) {
-        addTexture(name, x / RenderManager.getInstance().getWindowWidth() * 2 - 1,
-                y / RenderManager.getInstance().getWindowHeight() * -2 + 1,
-                texture.getImageWidth() / RenderManager.getInstance().getWindowWidth(),
-                texture.getImageHeight() / RenderManager.getInstance().getWindowHeight());
+        int windowWidth = sp.getRenderManager().getWindowWidth();
+        int windowHeight = sp.getRenderManager().getWindowHeight();
+
+        addTexture(name, x / windowWidth * 2 - 1,
+                y / windowHeight * -2 + 1,
+                texture.getImageWidth() / windowWidth,
+                texture.getImageHeight() / windowHeight);
     }
 
     public void addTexture(String texture, float x, float y, float width, float height) {
@@ -113,15 +151,15 @@ public class FlatTexture extends Renderable {
     public void render() {
         buffer.rewind();
         attr.setChanged();
-        RenderManager.getInstance().useAndUpdateVAO(vao);
-        
+        vao.useAndUpdateVAO();
+
         String lastTex = "";
         for (int i = 0; i < numTex; i++) {
-            if(enabled.get(i)) {
+            if (enabled.get(i)) {
                 String texName = textures.get(i);
-                if(!texName.equals(lastTex)) {
+                if (!texName.equals(lastTex)) {
                     ud.setTexture("tex", texName);
-                    RenderManager.getInstance().useShaderProgram(sp);
+                    sp.useShaderProgram();
                     lastTex = texName;
                 }
                 glDrawArrays(GL_QUADS, i * 4, 4);

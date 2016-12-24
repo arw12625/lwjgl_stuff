@@ -4,6 +4,7 @@
  */
 package resource;
 
+import game.StandardGame;
 import graphics.RenderManager;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -44,10 +45,10 @@ public class TextureData extends Data {
     }
     
     @Override
-    public void load(String path) {
+    public void load(String path, ResourceManager resourceManager) {
         BufferedImage image = null;
         try {
-            image = ImageIO.read(ResourceManager.getInstance().getFile(path));
+            image = ImageIO.read(resourceManager.getFile(path));
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -87,9 +88,15 @@ public class TextureData extends Data {
         return width;
     }
     
-    public static Resource<TextureData> loadTextureResource(String path) {
-        Resource<TextureData> tr = ResourceManager.getInstance().loadResource(path, new TextureData());
-        RenderManager.getInstance().queueTexture(tr);
+    public static Resource<TextureData> loadTextureResource(String path, StandardGame game) {
+        Resource<TextureData> tr = game.getResourceManager().loadResource(path, new TextureData());
+        game.getRenderManager().queueTexture(tr);
+        return tr;
+    }
+    
+    public static Resource<TextureData> loadTextureResource(String path, RenderManager renderManager, ResourceManager resourceManager) {
+        Resource<TextureData> tr = resourceManager.loadResource(path, new TextureData());
+        renderManager.queueTexture(tr);
         return tr;
     }
     

@@ -25,8 +25,8 @@ public class Resource<T extends Data> {
         return path;
     }
     
-    protected void loadData() {
-        data.load(path);
+    protected void loadData(ResourceManager resourceManager) {
+        data.load(path, resourceManager);
         loaded = true;
     }
     

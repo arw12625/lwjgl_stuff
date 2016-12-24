@@ -5,8 +5,11 @@
 package update;
 
 import game.Game;
+import game.GameStateManager;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -18,45 +21,23 @@ import org.lwjgl.glfw.GLFW;
  * A list of Updateables is updated each frame with the time since last update
  * 
  */
-public class UpdateManager implements Runnable {
+public class UpdateManager implements Runnable{
 
     private long lastTime; //last time in milis
     private final List<Updateable> entities;
     private final long updateTime;
-    private final Thread updateThread;
     public static final int defaultUpdateTime = 1000 / 60; // 60 fps
-    private static UpdateManager instance;
-
-    public static UpdateManager getInstance() {
-        if (instance == null) {
-            instance = new UpdateManager();
-        }
-        return instance;
-    }
-
-    private UpdateManager() {
+    private boolean toRelease, isReleased;
+    
+    public UpdateManager() {
         entities = new ArrayList<>();
-        updateThread = new Thread(this);
         this.updateTime = defaultUpdateTime;
         lastTime = getTime();
     }
-
-    public void destroy() {
-        try {
-            updateThread.join();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void start() {
-        updateThread.start();
-    }
-
+    
     @Override
     public void run() {
-        Game g = Game.getInstance();
-        while (g.running()) {
+        while (!toRelease) {
 
             long currentTime = getTime();
             int deltaTime = (int) (currentTime - lastTime);
@@ -70,6 +51,7 @@ public class UpdateManager implements Runnable {
             lastTime = currentTime;
 
         }
+        isReleased = true;
     }
 
     private void update(int delta) {
@@ -88,6 +70,17 @@ public class UpdateManager implements Runnable {
             }
         }
 
+    }
+    
+    public void release() {
+        toRelease = true;
+        while(!isReleased) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(UpdateManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
     public static long getTime() {

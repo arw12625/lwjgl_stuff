@@ -40,8 +40,8 @@ public class JSONData extends Data {
     }
 
     @Override
-    public void load(String path) {
-        String text = TextData.loadText(path);
+    public void load(String path, ResourceManager resourceManager) {
+        String text = TextData.loadText(path, resourceManager);
         JSONTokener tokener = new JSONTokener(text);
         JSONObject obj = new JSONObject(tokener);
         this.object = obj;
@@ -57,7 +57,7 @@ public class JSONData extends Data {
 
         String dataPath = obj.getString("data_path");
         try {
-            FileInputStream fs = ResourceManager.getInstance().getFileInputStream(dataPath);
+            FileInputStream fs = resourceManager.getFileInputStream(dataPath);
             FileChannel channel = fs.getChannel();
 
             for (int i = 0; i < bufferLengths.size(); i++) {
@@ -72,7 +72,7 @@ public class JSONData extends Data {
         }
     }
 
-    public void write(String path) {
+    public void write(String path, ResourceManager resourceManager) {
 
         try {
             String fileName = ResourceManager.getFileNameNoExt(path);
@@ -80,11 +80,11 @@ public class JSONData extends Data {
             String dataPath = directory + fileName + ".dat";
                   
             object.put("data_path", dataPath);
-            BufferedWriter writer = ResourceManager.getInstance().getWriter(path);
+            BufferedWriter writer = resourceManager.getWriter(path);
             writer.write(object.toString(3));
             writer.flush(); writer.close();
             
-            FileOutputStream fs = ResourceManager.getInstance().getFileOutputStream(dataPath);
+            FileOutputStream fs = resourceManager.getFileOutputStream(dataPath);
             FileChannel channel = fs.getChannel();
             JSONArray buffersJSON = object.getJSONArray("buffers");
             for(int i = 0; i < buffersJSON.length(); i++) {

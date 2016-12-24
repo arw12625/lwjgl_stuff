@@ -8,11 +8,13 @@ import org.lwjgl.opengl.GL30;
  */
 public class VertexArrayObject {
 
-    int vaoHandle;
-    boolean created;
-    boolean toRelease;
+    private RenderManager renderManager;
+    private int vaoHandle;
+    private boolean created;
+    private boolean toRelease;
 
-    public VertexArrayObject() {
+    public VertexArrayObject(RenderManager renderManager) {
+        this.renderManager = renderManager;
         vaoHandle = -1;
     }
 
@@ -40,5 +42,17 @@ public class VertexArrayObject {
 
     private void releaseVAO() {
         
+    }
+    
+    public RenderManager getRenderManager() {
+        return renderManager;
+    }
+    
+    public void useVAO() {
+        renderManager.useVAO(this);
+    }
+    
+    public void useAndUpdateVAO() {
+        renderManager.useAndUpdateVAO(this);
     }
 }

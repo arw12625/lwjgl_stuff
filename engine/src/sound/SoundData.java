@@ -30,10 +30,10 @@ public class SoundData extends Data {
     }
 
     @Override
-    public void load(String path) {
+    public void load(String path, ResourceManager resourceManager) {
         String ext = path.substring(path.lastIndexOf(".") + 1);
         if (ext.equals("ogg")) {
-            data = ResourceManager.getInstance().loadResource(path,
+            data = resourceManager.loadResource(path,
                     new resource.BufferData()).getData().getData();
             STBVorbisInfo info = STBVorbisInfo.malloc();
             data = readVorbis(data, info);
@@ -56,7 +56,7 @@ public class SoundData extends Data {
                 }*/
             }
         } else {
-            data = ResourceManager.getInstance().loadResource(path,
+            data = resourceManager.loadResource(path,
                     new resource.BufferData()).getData().getData();
         }
     }

@@ -4,6 +4,8 @@ import game.Game;
 import java.nio.DoubleBuffer;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
@@ -16,6 +18,7 @@ import org.lwjgl.opengl.GL;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL11.GL_TRUE;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import update.Action;
 
 /**
  *
@@ -43,13 +46,17 @@ public class Window {
     private DoubleBuffer mouseXBuffer, mouseYBuffer;
     private float mouseX, mouseY;
     private float dMouseX, dMouseY;
-
+    private boolean isDestroyed;
+    private boolean toRelease;
     private long numRefreshes;
+
+    private List<Action> exitCallbackActions;
 
     protected Window(String title, int width, int height) {
         this.title = title;
         this.width = width;
         this.height = height;
+        exitCallbackActions = new CopyOnWriteArrayList<>();
     }
 
     protected void initialize() {
@@ -89,7 +96,9 @@ public class Window {
             @Override
             public void invoke(long windowE) {
                 if (windowE == handle) {
-                    Game.getInstance().requestQuit();
+                    for (Action a : exitCallbackActions) {
+                        a.act(Window.this);
+                    }
                 }
             }
         };
@@ -125,15 +134,12 @@ public class Window {
 
             @Override
             public void invoke(long window, int key, int scancode, int action, int mods) {
-                if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-                    Game.getInstance().requestQuit();
-                } else {
-                    for (KeyCallback kcb : keyCallbacks) {
-                        if (kcb.isDestroyed()) {
-                            keyCallbacks.remove(kcb);
-                        } else if (kcb.isEnabled()) {
-                            kcb.invoke(window, key, scancode, action, mods);
-                        }
+
+                for (KeyCallback kcb : keyCallbacks) {
+                    if (kcb.isDestroyed()) {
+                        keyCallbacks.remove(kcb);
+                    } else if (kcb.isEnabled()) {
+                        kcb.invoke(window, key, scancode, action, mods);
                     }
                 }
 
@@ -184,6 +190,7 @@ public class Window {
     protected void destroy() {
         Callbacks.glfwReleaseCallbacks(handle);
         GLFW.glfwDestroyWindow(handle);
+        isDestroyed = true;
     }
 
     public void swapBuffers() {
@@ -254,8 +261,31 @@ public class Window {
         glfwSetInputMode(handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
+    private void closeWindow() {
+        glfwSetWindowShouldClose(handle, 1);
+    }
+
+    public void release() {
+        toRelease = true;
+        while (!isDestroyed) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Window.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
     public TextInput getDefaultTextInput() {
         return defaultTextInput;
+    }
+
+    public void addExitCallback(Action a) {
+        exitCallbackActions.add(a);
+    }
+
+    public boolean toRelease() {
+        return toRelease;
     }
 
 }

@@ -169,6 +169,10 @@ public class UniformData {
         bindTextures();
     }
 
+    public RenderManager getRenderManager() {
+        return owner.getRenderManager();
+    }
+    
     //resize the buffer to allow more/less uniforms
     public void reallocate() {
         ByteBuffer old = data;
@@ -260,7 +264,7 @@ public class UniformData {
 
     private void bindTextures() {
         for (Map.Entry<Integer, String> tex : textureMap.entrySet()) {
-            RenderManager.getInstance().bind(tex.getValue(), tex.getKey());
+            getRenderManager().bind(tex.getValue(), tex.getKey());
         }
     }
 

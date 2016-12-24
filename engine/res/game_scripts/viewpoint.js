@@ -5,11 +5,8 @@ var z = 0;
 var speed = 0.1;
 var mouseSpeedX = -0.01;
 var mouseSpeedY = -0.01;
-while(!renderManager.isCreated()) {
-print("EHEH");}
-var vp = renderManager.getViewPoint();
 
-while(!window.isCreated()){}
+var vp = renderManager.getViewPoint();
 
 var keys = new KeyCallbackExtender(obj, {
         invoke: function(window, key, scancode, action, mods) {

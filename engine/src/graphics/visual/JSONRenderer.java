@@ -1,6 +1,7 @@
 package graphics.visual;
 
 import game.Component;
+import game.StandardGame;
 import geometry.Material;
 import geometry.Transform;
 import graphics.RenderManager;
@@ -51,7 +52,7 @@ public class JSONRenderer extends Renderable {
     private List<Mesh> meshes;
     private List<ShaderProgram> shaders;
 
-    public JSONRenderer(Component parent, JSONData model) {
+    public JSONRenderer(Component parent, JSONData model, RenderManager renderManager, ResourceManager resourceManager) {
         super(parent);
         this.model = model;
         materials = new HashMap<>();
@@ -65,7 +66,7 @@ public class JSONRenderer extends Renderable {
 
             Map<String, String> textureMap = mat.getTextureMap();
             for (String value : textureMap.values()) {
-                TextureData.loadTextureResource(value);
+                TextureData.loadTextureResource(value, renderManager, resourceManager);
             }
             materials.put(matName, mat);
         }
@@ -73,7 +74,7 @@ public class JSONRenderer extends Renderable {
         JSONArray jsonShaders = model.getJSON().getJSONArray("shaders");
         for (int i = 0; i < jsonShaders.length(); i++) {
             shaders.add(ShaderProgram.loadProgram("shaders/" + jsonShaders.getJSONObject(i).getString("vertex_shader"),
-                    "shaders/" + jsonShaders.getJSONObject(i).getString("fragment_shader")));
+                    "shaders/" + jsonShaders.getJSONObject(i).getString("fragment_shader"), renderManager, resourceManager));
         }
         JSONArray jsonMeshes = model.getJSON().getJSONArray("meshes");
         
@@ -98,11 +99,11 @@ public class JSONRenderer extends Renderable {
         }
 
         for (Mesh m : meshes) {
-            RenderManager.getInstance().useShaderProgram(m.sp);
+            m.sp.useShaderProgram();
             
             //create a new VAO for each renderer
             m.vao.generateVAO();
-            RenderManager.getInstance().useAndUpdateVAO(m.vao);
+            m.vao.useAndUpdateVAO();
             m.vertexHandle = glGenBuffers();
             glBindBuffer(GL_ARRAY_BUFFER, m.vertexHandle);
             int vertexBufferIndex = m.json.getInt("vertices");
@@ -137,9 +138,9 @@ public class JSONRenderer extends Renderable {
     public void render() {
         
         for (Mesh m : meshes) {
-            RenderManager.getInstance().useAndUpdateVAO(m.vao);
+            m.vao.useAndUpdateVAO();
             m.sp.setUniformData(m.uniforms);
-            RenderManager.getInstance().useShaderProgram(m.sp);
+            m.sp.useShaderProgram();
             //for now only tris are considered
             GL11.glDrawElements(GL_TRIANGLES, m.numberFaces * 3, GL_UNSIGNED_INT, 0);
         }
@@ -154,9 +155,16 @@ public class JSONRenderer extends Renderable {
         return meshes;
     }
 
-    public static JSONRenderer createJSONRenderer(Component parent, String path) {
-        JSONRenderer r = new JSONRenderer(parent, ResourceManager.getInstance().loadResource(path, new JSONData()).getData());
-        RenderManager.getInstance().add(r);
+    public static JSONRenderer createJSONRenderer(Component parent, String path, StandardGame game) {
+        return createJSONRenderer(parent, path, game.getRenderManager(), game.getResourceManager());
+    }
+    
+    
+    public static JSONRenderer createJSONRenderer(Component parent, String path,
+            RenderManager renderManager, ResourceManager resourceManager) {
+        JSONRenderer r = new JSONRenderer(parent, resourceManager.loadResource(path, new JSONData()).getData(),
+        renderManager, resourceManager);
+        renderManager.add(r);
         return r;
     }
 
@@ -184,7 +192,7 @@ public class JSONRenderer extends Renderable {
             this.json = json;
             attributeLocations = new ArrayList<>();
             this.parent = parent;
-            vao = new VertexArrayObject();
+            vao = new VertexArrayObject(sp.getRenderManager());
         }
 
         public UniformData getUniforms() {

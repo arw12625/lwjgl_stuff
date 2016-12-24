@@ -1,12 +1,15 @@
 package io;
 
 import game.Game;
+import game.GameStateManager;
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.glfw.GLFW.*;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -27,38 +30,70 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  *
  * The interface with GLFW that handles windowing, opengl, and input
  */
-public class GLFWManager {
+public class GLFWManager implements Runnable {
 
     private List<Window> windows;
     private Queue<Window> windowsToInitialize;
-    
+
     private GLFWErrorCallback errorCallback;
-    
+
     private long numRefreshes;
-    private boolean toDestroy;
-    private boolean destroyed;
+    private boolean toRelease;
+    private boolean isReleased;
+    private boolean isInitialized;
 
-    private static GLFWManager instance;
+    public GLFWManager() {
 
-    public static GLFWManager getInstance() {
-        if (instance == null) {
-            instance = new GLFWManager();
-        }
-        return instance;
-    }
-    
-    private GLFWManager() {
-        
         windows = new ArrayList<>();
         windowsToInitialize = new ConcurrentLinkedQueue<>();
-        
+
         numRefreshes = 0;
-        
-        initializeError();
-        
+
     }
-    
-    
+
+    public boolean isInitialized() {
+        return isInitialized;
+    }
+
+    @Override
+    public void run() {
+        initializeError();
+        isInitialized = true;
+
+        while (!toRelease) {
+
+            glfwPollEvents();
+
+            Window w;
+            while ((w = windowsToInitialize.poll()) != null) {
+                w.initialize();
+                windows.add(w);
+            }
+
+            int i = 0;
+            while(i < windows.size()) {
+                w = windows.get(i);
+                if(w.toRelease()) {
+                    w.destroy();
+                    windows.remove(i);
+                } else {
+                    w.refresh();
+                    i++;
+                }
+            }
+
+            numRefreshes++;
+            
+            try {
+                Thread.sleep(1000/60);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(GLFWManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        releaseGLFW();
+    }
+
     private void initializeError() {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
@@ -71,56 +106,34 @@ public class GLFWManager {
 
     }
 
-    //update glfw, called each frame by the main thread
-    public void refresh() {
-
-        if(toDestroy) {
-            destroyGLFW();
-            return;
+    public void release() {
+        toRelease = true;
+        while(!isReleased) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(GLFWManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
-        
-        
-        glfwPollEvents();
-        
-        Window w;
-        while ((w = windowsToInitialize.poll()) != null) {
-            w.initialize();
-            windows.add(w);
-        }
-        
-        for(Window window : windows) {
-            window.refresh();
-        }
-        
-        numRefreshes++;
     }
 
-    public void destroy() {
-        toDestroy = true;
-    }
-
-    private void destroyGLFW() {
-        
-        for(Window w : windows) {
-            w.destroy();
-        }
+    private void releaseGLFW() {
 
         // Terminate GLFW and release the GLFWerrorfun
         errorCallback.release();
         glfwTerminate();
-        
-        destroyed = true;
+
+        isReleased = true;
     }
-    
+
     public Window createWindow(String title, int width, int height) {
         Window window = new Window(title, width, height);
         windowsToInitialize.add(window);
         return window;
     }
-    
-    public boolean getIsDestroyed() {
-        return destroyed;
+
+    public boolean isRelased() {
+        return isReleased;
     }
-    
 
 }

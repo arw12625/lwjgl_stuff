@@ -29,18 +29,18 @@ public class AttributeDataStruct extends AttributeData {
     List<Bufferable> groupings;
     List<List<PreAttribute>> preAttributes;
     
-    public static AttributeDataStruct createAttributeDataStruct(VAORender vao, String name, int usage) {
-        return createAttributeDataStruct(vao, name, usage, 0);
+    public static AttributeDataStruct createAttributeDataStruct(VAORender vao, String name, int usage, RenderManager renderManager) {
+        return createAttributeDataStruct(vao, name, usage, 0, renderManager);
     }
     
-    public static AttributeDataStruct createAttributeDataStruct(VAORender vao, String name, int usage, int divisor) {
-        AttributeDataStruct ad = new AttributeDataStruct(name, usage, divisor);
+    public static AttributeDataStruct createAttributeDataStruct(VAORender vao, String name, int usage, int divisor, RenderManager renderManager) {
+        AttributeDataStruct ad = new AttributeDataStruct(name, usage, divisor, renderManager);
         vao.addAttributeData(ad);
         return ad;
     }
     
-    protected AttributeDataStruct(String name, int usage, int divisor) {
-        super(name, usage, divisor);
+    protected AttributeDataStruct(String name, int usage, int divisor, RenderManager renderManager) {
+        super(name, usage, divisor, renderManager);
         groupingIndices = new HashMap<>();
         groupings = new ArrayList<>();
         preAttributes = new ArrayList<>();

@@ -47,7 +47,7 @@ public class ParticleEngine extends Renderable implements update.Updateable {
 
     @Override
     public void render() {
-        RenderManager.getInstance().useAndUpdateVAO(vao);
+        vao.useAndUpdateVAO();
 
     }
 

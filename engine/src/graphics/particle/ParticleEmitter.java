@@ -100,9 +100,9 @@ public abstract class ParticleEmitter<T extends Particle> extends Renderable {
     
     @Override
     public void render() {
-        RenderManager.getInstance().useAndUpdateVAO(vao);
+        shaderProgram.getRenderManager().useAndUpdateVAO(vao);
         shaderProgram.setUniformData(ud);
-        RenderManager.getInstance().useShaderProgram(shaderProgram);
+        shaderProgram.useShaderProgram();
     
     }
     

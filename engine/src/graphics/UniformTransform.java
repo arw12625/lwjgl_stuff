@@ -87,19 +87,19 @@ public class UniformTransform implements UniformStruct {
         }
 
         if (pMatEnabled) {
-            pMat.set(RenderManager.getInstance().getProjectionMatrix());
+            pMat.set(parent.getRenderManager().getProjectionMatrix());
             int pID = parent.getUniform(pName);
             parent.setUniform(pID, pMat);
         }
 
         if (pvmMatEnabled) {
-            RenderManager.getInstance().getProjectionViewMatrix().mul(transMat, pvmMat);
+            parent.getRenderManager().getProjectionViewMatrix().mul(transMat, pvmMat);
             int pvmID = parent.getUniform(pvmName);
             parent.setUniform(pvmID, pvmMat);
         }
 
         if (vmMatEnabled || normalEnabled) {
-            RenderManager.getInstance().getViewMatrix().mul(transMat, vmMat);
+            parent.getRenderManager().getViewMatrix().mul(transMat, vmMat);
         }
         
         if(vmMatEnabled) {

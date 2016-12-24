@@ -8,6 +8,7 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import resource.ResourceManager;
 import resource.TextData;
 import update.UpdateManager;
 /**
@@ -25,16 +26,17 @@ public class ScriptManager {
     Invocable inv;
     static ScriptManager instance;
     private GameScript[] startupScripts;
+    
+    private UpdateManager updateManager;
+    private ResourceManager resourceManager;
 
-    public static ScriptManager getInstance() {
-        if (instance == null) {
-            instance = new ScriptManager();
-        }
-        return instance;
+    public ScriptManager(UpdateManager updateManager, ResourceManager resourceManager) {
+        scripts = new ArrayList<>();
+        this.updateManager = updateManager;
+        this.resourceManager = resourceManager;
     }
 
-    private ScriptManager() {
-        scripts = new ArrayList<>();
+    public void initialize() {
         
         // create a script engine manager
         ScriptEngineManager factory = new ScriptEngineManager();
@@ -60,15 +62,6 @@ public class ScriptManager {
         eval("GLFW = JavaImporter(org.lwjgl.glfw).GLFW;");
         eval("KeyCallbackExtender = Java.extend(Java.type(\"io.KeyCallback\"));");
         
-        //add singleton managers to simplified names
-        engine.put("gameInst", Game.getInstance());
-        engine.put("renderManager", graphics.RenderManager.getInstance());
-        engine.put("window", graphics.RenderManager.getInstance().getWindow());
-        engine.put("resourceManager", resource.ResourceManager.getInstance());
-        engine.put("scriptManager", this);
-        engine.put("soundManager", sound.SoundManager.getInstance());
-        engine.put("updateManager", update.UpdateManager.getInstance());
-        engine.put("glfwManager", io.GLFWManager.getInstance());
         setCurrentObject(null);
         
         // evaluate JavaScript code from startup scripts
@@ -79,7 +72,17 @@ public class ScriptManager {
             startupScripts[i].enable(true);
         }
     }
-
+    
+    public void release() {
+        /*
+        while(false) {
+            
+        }*/
+    }
+    
+    public void addGLobal(String name, Object value) {
+        engine.put(name, value);
+    }
 
     private Object eval(String command) {
         try {
@@ -113,7 +116,7 @@ public class ScriptManager {
         setCurrentScript(gs);
         Object obj = eval(addScriptWrapper(script));
         gs.setScriptObject(obj);
-        UpdateManager.getInstance().add(gs);
+        updateManager.add(gs);
         return gs;
     }
     
@@ -122,7 +125,7 @@ public class ScriptManager {
     }
     
     public GameScript loadScript(Component parent, String path) {
-        return createScript(parent, TextData.loadText(path));
+        return createScript(parent, TextData.loadText(path, resourceManager));
     }
 
     public Object runScriptObjectMethod(GameScript s, String func, Object... args) throws ScriptException, NoSuchMethodException {

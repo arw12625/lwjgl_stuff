@@ -1,6 +1,7 @@
 package graphics.ui;
 
 import game.Component;
+import game.StandardGame;
 import graphics.RenderManager;
 import graphics.Renderable;
 import io.GLFWManager;
@@ -31,10 +32,10 @@ public class Console extends Renderable {
     private StringBuilder currentLine;
     private List<String> previousLines;
     private List<String> inputLines;
-    private ScriptManager scriptManager;
     private int charWidth, charHeight, charCapacity;
     private int lineSelect;
-
+    private int fontSize;
+    
     private StringBuilder builder;
 
     private static final int dispLineCacheSize = 100;
@@ -42,31 +43,44 @@ public class Console extends Renderable {
     private static final String[] deleteDelimiters = {" ", "\n", "(", ")", "[", "]", "{", "}", "\"", "'", ":", "."};
     private static final String defaultFont = "fonts/cour.ttf";
     private static final Vector4f defaultColor = new Vector4f(0.5f,0.5f,.5f,1);
+    
+    private RenderManager renderManager;
+    private ResourceManager resourceManager;
+    private ScriptManager scriptManager;
 
-    public Console(Component parent, TextInput textInput, int charWidth, int charHeight, int fontSize) {
+    public Console(Component parent, TextInput textInput, int charWidth, int charHeight, int fontSize,
+            RenderManager renderManager, ResourceManager resourceManager, ScriptManager scriptManager) {
         super(parent);
-        this.keyCallback = new ConsoleKeyCallback();
-        RenderManager.getInstance().getWindow().addKeyCallback(keyCallback);
         this.charWidth = charWidth;
         this.charHeight = charHeight;
         charCapacity = charWidth * charHeight;
-        //this.display = TextDisplay.createTextDisplay(this, "fonts/cour.ttf", 24, GLFWManager.getInstance().getResX(), GLFWManager.getInstance().getResY(), 20, 25, charCapacity, new Vector4f(1, 0, 1, 1));
-        FontData f = ResourceManager.getInstance().loadResource(defaultFont, true, new FontData("consoleFont", fontSize, 512, 512, defaultColor)).getData();
-        this.display = new TextDisplay(parent, f, 30, 40, RenderManager.getInstance().getWindowWidth(),
-                RenderManager.getInstance().getWindowHeight(), charCapacity);
-        TextureData.loadTextureResource("console/console.png");
-        textures = new FlatTexture(this, 10);
-        textures.addTexture("console/console.png", -1, 1, 2, 2);
         
+        this.fontSize = fontSize;
         this.textInput = textInput;
-        this.scriptManager = ScriptManager.getInstance();
-        consoleObject = scriptManager.loadScript(this, "game_scripts/console.js");
+        this.scriptManager = scriptManager;
+        this.renderManager = renderManager;
+        this.resourceManager = resourceManager;
 
         currentLine = new StringBuilder();
         previousLines = new ArrayList<>();
         inputLines = new ArrayList<>();
         builder = new StringBuilder();
         lineSelect = 0;
+    }
+    
+    public void init() {
+        
+        this.keyCallback = new ConsoleKeyCallback();
+        renderManager.getWindow().addKeyCallback(keyCallback);
+        //this.display = TextDisplay.createTextDisplay(this, "fonts/cour.ttf", 24, GLFWManager.getInstance().getResX(), GLFWManager.getInstance().getResY(), 20, 25, charCapacity, new Vector4f(1, 0, 1, 1));
+        FontData f = FontData.loadFont(defaultFont, "consoleFont", fontSize, 512, 512, defaultColor, renderManager, resourceManager);
+        this.display = TextDisplay.createTextDisplay(this.getParent(), f, 30, 40,charCapacity,
+                renderManager.getWindowWidth(), renderManager.getWindowHeight(), renderManager, resourceManager);
+        TextureData.loadTextureResource("console/console.png", renderManager, resourceManager);
+        textures = FlatTexture.createFlatTexture(this, 10, renderManager);
+        textures.addTexture("console/console.png", -1, 1, 2, 2);
+        
+        consoleObject = scriptManager.loadScript(this, "game_scripts/console.js");
     }
 
     private void processCursor(int key) {
@@ -177,16 +191,18 @@ public class Console extends Renderable {
         }
     }
 
-    public static Console createConsole(Component parent) {
-        return createConsole(parent, 24, 40, 12);
+    public static Console createConsole(Component parent, StandardGame game) {
+        return createConsole(parent, 24, 40, 12, game);
 
     }
 
-    public static Console createConsole(Component parent, int fontSize, int charWidth, int charHeight) {
-        TextInput ti = RenderManager.getInstance().getWindow().getDefaultTextInput();
-        Console c = new Console(parent, ti, charWidth, charHeight, fontSize);
+    public static Console createConsole(Component parent, int fontSize, int charWidth, int charHeight, StandardGame game) {
+        TextInput ti = game.getRenderManager().getWindow().getDefaultTextInput();
+        Console c = new Console(parent, ti, charWidth, charHeight, fontSize,
+        game.getRenderManager(), game.getResourceManager(), game.getScriptManager());
         c.enable(false);
-        RenderManager.getInstance().add(c);
+        c.init();
+        game.getRenderManager().add(c);
         return c;
     }
     

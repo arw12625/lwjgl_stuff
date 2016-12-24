@@ -1,5 +1,6 @@
 package graphics;
 
+import game.StandardGame;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,6 +26,7 @@ import static org.lwjgl.opengl.GL20.glShaderSource;
 import static org.lwjgl.opengl.GL30.glBindBufferBase;
 import org.lwjgl.opengl.GL31;
 import static org.lwjgl.opengl.GL31.GL_UNIFORM_BUFFER;
+import resource.ResourceManager;
 import resource.TextData;
 
 /**
@@ -58,8 +60,11 @@ public class ShaderProgram {
 
     private Map<String, Integer> attributeLocations;
     private int nextAttribLoc;
+    
+    private RenderManager renderManager;
 
-    public ShaderProgram(String vertexText, String fragmentText) {
+    public ShaderProgram(String vertexText, String fragmentText, RenderManager renderManager) {
+        this.renderManager = renderManager;
         this.vertexText = vertexText;
         this.fragmentText = fragmentText;
 
@@ -85,12 +90,22 @@ public class ShaderProgram {
         uni.updateAll();
     }
 
-    public static ShaderProgram loadProgram(String vertexPath, String fragmentPath) {
-        String vertexResource = TextData.loadText(vertexPath);
-        String fragmentResource = TextData.loadText(fragmentPath);
-        ShaderProgram sp = new ShaderProgram(vertexResource, fragmentResource);
-
+    public static ShaderProgram loadProgram(String vertexPath, String fragmentPath, StandardGame game) {
+        return loadProgram(vertexPath, fragmentPath, game.getRenderManager(), game.getResourceManager());
+    }
+    public static ShaderProgram loadProgram(String vertexPath, String fragmentPath, RenderManager renderManager, ResourceManager resourceManager) {
+        String vertexResource = TextData.loadText(vertexPath, resourceManager);
+        String fragmentResource = TextData.loadText(fragmentPath, resourceManager);
+        ShaderProgram sp = new ShaderProgram(vertexResource, fragmentResource, renderManager);
         return sp;
+    }
+    
+    public RenderManager getRenderManager() {
+        return renderManager;
+    }
+    
+    public void useShaderProgram() {
+        renderManager.useShaderProgram(this);
     }
 
     public int createShader() {
@@ -201,7 +216,7 @@ public class ShaderProgram {
         String blockName;
         while ((blockName = blockNamesNew.poll()) != null) {
             String bufferName = bufferNames.get(blockName);
-            int bufferLocation = RenderManager.getInstance().getUniformBuffer(bufferName).getHandle();
+            int bufferLocation = renderManager.getUniformBuffer(bufferName).getHandle();
             int blockLocation = GL31.glGetUniformBlockIndex(program, blockName);
             blockLocations.put(blockName, blockLocation);
             glBindBufferBase(GL_UNIFORM_BUFFER, 2, bufferLocation);

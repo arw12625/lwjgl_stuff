@@ -1,6 +1,7 @@
 package graphics.particle;
 
 import game.Component;
+import game.StandardGame;
 import graphics.AttributeData;
 import graphics.GLType;
 import graphics.RenderManager;
@@ -99,18 +100,18 @@ public class TexturedParticleEmitter extends ParticleEmitter {
         -5f, 5f, 0.0f, 0, texOffsetUnit,
         5f, 5f, 0.0f, texOffsetUnit, texOffsetUnit,};
 
-    public static TexturedParticleEmitter createParticleEmitter(Component parent, String name, int capacity, Vector3f origin, ParticleEngine engine) {
-        ShaderProgram shader = ShaderProgram.loadProgram("shaders/tex_particle.vs", "shaders/tex_particle.fs");
+    public static TexturedParticleEmitter createParticleEmitter(Component parent, String name, int capacity, Vector3f origin, ParticleEngine engine, StandardGame game) {
+        ShaderProgram shader = ShaderProgram.loadProgram("shaders/tex_particle.vs", "shaders/tex_particle.fs", game);
         TexturedParticleEmitter emit = new TexturedParticleEmitter(parent, name, shader, capacity, new PointDistribution(), defaultTextureName);
         engine.addParticleEmitter(emit);
-        RenderManager.getInstance().add(emit);
+        game.getRenderManager().add(emit);
         return emit;
     }
 
-    public static ParticleEngine createParticleEngine(Component parent, String name, int capacity) {
-        VAORender vao = new VAORender();
+    public static ParticleEngine createParticleEngine(Component parent, String name, int capacity, StandardGame game) {
+        VAORender vao = new VAORender(game.getRenderManager());
 
-        resource.TextureData.loadTextureResource(defaultTextureName);
+        resource.TextureData.loadTextureResource(defaultTextureName, game);
 
         ByteBuffer baseDataBuffer = BufferUtils.createByteBuffer(baseData.length * Float.BYTES);
         baseDataBuffer.asFloatBuffer().put(baseData);
@@ -129,8 +130,8 @@ public class TexturedParticleEmitter extends ParticleEmitter {
         dynamicAttr.createAttribute("tex_offset", GLType.GL_2fv, 16,24);
 
         ParticleEngine engine = new ParticleEngine(parent, name, vao);
-        RenderManager.getInstance().add(engine);
-        UpdateManager.getInstance().add(engine);
+        game.getRenderManager().add(engine);
+        game.getUpdateManager().add(engine);
 
         return engine;
     }

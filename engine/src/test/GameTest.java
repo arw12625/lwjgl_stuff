@@ -2,6 +2,7 @@ package test;
 
 import game.Game;
 import game.GameObject;
+import game.StandardGame;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.script.ScriptException;
@@ -14,33 +15,38 @@ import script.ScriptManager;
  * 
  * The main test class for now
  */
-public class GameTest extends Thread {
+public class GameTest implements Runnable {
     
-    Game game;
+    StandardGame game;
 
     public static void main(String[] args) {
-        GameTest gt = new GameTest();
-        gt.start();
+        StandardGame game = StandardGame.createStandardGame();
         
-        Game.getInstance().start();
+        GameTest gt = new GameTest(game);
+        Thread testThread = new Thread(gt);
+        testThread.start();
+        
+        game.startGLFW();
         
     }
     
-    public GameTest() {
-        this.game = Game.getInstance();
+    public GameTest(StandardGame game) {
+        this.game = game;
     }
     
     @Override
     public void run() {
-        while(!game.running()) {
+        while(!Game.isEngineRunning(game.getStateStack().getState())) {
             Thread.yield();
+        
         }
+        ScriptManager scriptManager = game.getScriptManager();
         
         GameObject scene = new GameObject(game);
-        GameScript load = ScriptManager.getInstance().loadScript(scene, "game_scripts/loading.js");
-        GameScript print = ScriptManager.getInstance().loadScript(scene, "game_scripts/print_test.js");
+        GameScript load = scriptManager.loadScript(scene, "game_scripts/loading.js");
+        GameScript print = scriptManager.loadScript(scene, "game_scripts/print_test.js");
         
-        while(game.running()) {
+        while(!Game.isEngineReleased(game.getStateStack().getState())) {
             Thread.yield();
         }
         System.out.println("GameTest finished");

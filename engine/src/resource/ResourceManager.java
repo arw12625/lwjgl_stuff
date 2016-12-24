@@ -1,6 +1,7 @@
 package resource;
 
 import game.Game;
+import game.GameStateManager;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -15,6 +16,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -30,30 +33,25 @@ public class ResourceManager implements Runnable {
 
     private Queue<Resource> queuedResources;
     private Map<String, Resource> resources;
-    private Thread resourceThread;
-    private static ResourceManager instance;
-
-    public static ResourceManager getInstance() {
-        if (instance == null) {
-            instance = new ResourceManager();
-        }
-        return instance;
-    }
-
-    private ResourceManager() {
+    private boolean toRelease, isReleased;
+    
+    public ResourceManager() {
         queuedResources = new ConcurrentLinkedQueue<>();
         resources = new HashMap<>();
-        resourceThread = new Thread(this);
+        
     }
-
-    public void destroy() {
-        queuedResources.clear();
-        resources.clear();
-        try {
-            resourceThread.join();
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
+    
+    public void release() {
+        toRelease = true;
+        while(!isReleased) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ResourceManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
+        /*queuedResources.clear();
+        resources.clear();*/
     }
 
     //this method will return a resource with the appropriate data from the path
@@ -76,19 +74,25 @@ public class ResourceManager implements Runnable {
                 return found;
             }
         }
-        r.loadData();
+        r.loadData(this);
         resources.put(r.getPath(), r);
         return r;
     }
 
+    @Override
     public void run() {
-        while (Game.getInstance().running()) {
+        while (!toRelease) {
             Resource r;
             while ((r = queuedResources.poll()) != null) {
                 loadResource(r, true);
             }
-            Thread.yield();
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ResourceManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
+        isReleased = true;
     }
 
     //queue a resource for loading, similar to loadResource
@@ -108,10 +112,6 @@ public class ResourceManager implements Runnable {
 
     public boolean isLoading() {
         return !queuedResources.isEmpty();
-    }
-
-    public void start() {
-        resourceThread.start();
     }
 
     public static String getResourceDirectory() {

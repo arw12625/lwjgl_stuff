@@ -1,6 +1,7 @@
 package graphics.ui;
 
 import game.Component;
+import game.StandardGame;
 import graphics.AttributeData;
 import graphics.GLType;
 import graphics.RenderManager;
@@ -50,6 +51,7 @@ public class TextDisplay extends Renderable {
     private VAORender vao;
     private AttributeData attr;
     private ByteBuffer buffer;
+    private RenderManager renderManager;
 
     private float lineSpacing;
     private float characterSpacing;
@@ -57,7 +59,7 @@ public class TextDisplay extends Renderable {
     static final int defaultCapacity = 100;
     static final int NUM_BYTES = (2 + 2) * 4 * Float.BYTES;
 
-    public TextDisplay(Component parent, FontData f, float x, float y, float width, float height, int capacity) {
+    public TextDisplay(Component parent, FontData f, float x, float y, float width, float height, int capacity, ShaderProgram shaderProgram) {
 
         super(parent);
         this.f = f;
@@ -75,7 +77,8 @@ public class TextDisplay extends Renderable {
         xPos = BufferUtils.createFloatBuffer(1);
         yPos = BufferUtils.createFloatBuffer(1);
 
-        vao = new VAORender();
+        renderManager = shaderProgram.getRenderManager();
+        vao = new VAORender(renderManager);
         attr = AttributeData.createAttributeData(vao, "text", GL_DYNAMIC_DRAW);
         buffer = BufferUtils.createByteBuffer(capacity * NUM_BYTES);
         attr.setData(buffer);
@@ -83,7 +86,8 @@ public class TextDisplay extends Renderable {
         attr.createAttribute("vertex_tex_coord", GLType.GL_2fv, 8, 16);
         
         quad = STBTTAlignedQuad.create();
-        sp = ShaderProgram.loadProgram("shaders/text.vs", "shaders/text.fs");
+        this.sp = shaderProgram;
+        
         ud = new UniformData(sp);
         ud.addStruct(f);
         sp.setUniformData(ud);
@@ -108,8 +112,8 @@ public class TextDisplay extends Renderable {
             String copy = text.toString();
             int length = copy.length();
 
-            float xRes = RenderManager.getInstance().getWindowWidth();
-            float yRes = RenderManager.getInstance().getWindowHeight();
+            float xRes = renderManager.getWindowWidth();
+            float yRes = renderManager.getWindowHeight();
             xPos.put(0, x);
             yPos.put(0, y);
             
@@ -169,8 +173,8 @@ public class TextDisplay extends Renderable {
             changed = false;
         }
         
-        RenderManager.getInstance().useAndUpdateVAO(vao);
-        RenderManager.getInstance().useShaderProgram(sp);
+        renderManager.useAndUpdateVAO(vao);
+        renderManager.useShaderProgram(sp);
 
         glDrawArrays(GL_QUADS, 0, charNum * 4);
     }
@@ -202,20 +206,19 @@ public class TextDisplay extends Renderable {
         }
         changed = true;
     }
-
-    public static TextDisplay createTextDisplay(int fontSize) {
-        return createTextDisplay("fonts/arial.ttf", fontSize, 200, 200);
-    }
-
-    public static TextDisplay createTextDisplay(String fontPath, int fontSize, float width, float height) {
-        return createTextDisplay(null, fontPath, fontSize, width, height, 20, 20, defaultCapacity, new Vector4f(1,1,0,1));
-    }
-
     
-    public static TextDisplay createTextDisplay(Component parent, String fontPath, int fontSize, float width, float height, float x, float y, int capacity, Vector4f color) {
-        FontData f = ResourceManager.getInstance().loadResource(fontPath, true, new FontData(fontPath, fontSize, 512, 512, color)).getData();
-        TextDisplay td = new TextDisplay(parent, f, x, y, width, height, capacity);
-        RenderManager.getInstance().add(td);
+    public static TextDisplay createTextDisplay(Component parent, FontData font,
+            float width, float height, float x, float y,
+            int capacity, StandardGame game) {
+        return createTextDisplay(parent, font, width, height, x, y,
+                capacity, game.getRenderManager(), game.getResourceManager());
+    }
+    public static TextDisplay createTextDisplay(Component parent,
+            FontData font, float width, float height, float x, float y,
+            int capacity, RenderManager renderManager, ResourceManager resourceManager) {
+        ShaderProgram shader = ShaderProgram.loadProgram("shaders/text.vs", "shaders/text.fs",renderManager, resourceManager);
+        TextDisplay td = new TextDisplay(parent, font, x, y, width, height, capacity, shader);
+        renderManager.add(td);
         return td;
     }
 

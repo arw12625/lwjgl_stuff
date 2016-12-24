@@ -7,10 +7,10 @@ oloy = function() {
 }
 
 quit = function() {
-    gameInst.requestQuit();
+    gameInst.end();
 };
 exit = function() {
-    gameInst.requestQuit();
+    gameInst.end();
 };
 
 

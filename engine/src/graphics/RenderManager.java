@@ -38,16 +38,7 @@ import resource.TextureData;
  *
  *
  */
-public class RenderManager extends Thread {
-
-    private static RenderManager instance;
-
-    public static RenderManager getInstance() {
-        if (instance == null) {
-            instance = new RenderManager();
-        }
-        return instance;
-    }
+public class RenderManager implements Runnable {
 
     //a queue of renderables added but not yet initialize for rendering
     private Queue<Renderable> toAdd;
@@ -89,10 +80,11 @@ public class RenderManager extends Thread {
     public static final int RENDER_TIME = 1000 / 60;
     
     private Window window;
-    private boolean toDestroy;
-    private boolean created;
+    private boolean toRelase;
+    private boolean initialized;
+    private boolean released;
 
-    private RenderManager() {
+    public RenderManager(Window window) {
         toAdd = new ConcurrentLinkedQueue<>();
         renderables = new ArrayList<>();
         zIndices = new ArrayList<>();
@@ -108,12 +100,10 @@ public class RenderManager extends Thread {
 
         uniformBuffers = new HashMap<>();
 
-        window = GLFWManager.getInstance().createWindow("yo", 
-                DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
-
+        this.window = window;
     }
     
-    public void setupStuff() {
+    public void initialize() {
         
         Quaternionf q = new Quaternionf();
         q.set(new AxisAngle4f(0, 0, 0, 1));
@@ -134,8 +124,11 @@ public class RenderManager extends Thread {
         
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        
+        
+        initialized = true;
     }
-
+    
     public int getWindowWidth() {
         return window.getWidth();
     }
@@ -147,18 +140,17 @@ public class RenderManager extends Thread {
     @Override
     public void run() {
         
+        
         //wait for the window to be created
         while(!window.isCreated()) {
             Thread.yield();
         }
-        
         //then bind the opengl context of the window to the current thread
         window.bindGLContext();
         
-        setupStuff();
-        created = true;
+        initialize();
         
-        while(!toDestroy) {
+        while(!toRelase) {
             render();
             window.swapBuffers();
             try {
@@ -167,10 +159,15 @@ public class RenderManager extends Thread {
                 Logger.getLogger(RenderManager.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        
+        window.release();
+        
+        released = true;
+
     }
     
-    public boolean isCreated() {
-        return created;
+    public boolean isInitialized() {
+        return initialized;
     }
 
     public void render() {
@@ -182,7 +179,7 @@ public class RenderManager extends Thread {
 
         Renderable renderableToAdd;
         while ((renderableToAdd = toAdd.poll()) != null) {
-            initialize(renderableToAdd);
+            RenderManager.this.initialize(renderableToAdd);
         }
 
         int i = 0;
@@ -194,9 +191,20 @@ public class RenderManager extends Thread {
             } else if (r.isEnabled()) {
                 r.render();
             }
-            i++;
+                i++;
         }
-
+        
+    }
+    
+    public void release() {
+        toRelase = true;
+        while(!released) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(RenderManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
     public void add(Renderable r) {
@@ -351,7 +359,7 @@ public class RenderManager extends Thread {
     
     public GLBuffer createUniformBuffer(String name, ByteBuffer data, boolean dynamic) {
         if (!uniformBuffers.containsKey(name)) {
-            GLBuffer buf = new GLBuffer(GL31.GL_UNIFORM_BUFFER, dynamic ? GL15.GL_DYNAMIC_DRAW : GL15.GL_STATIC_DRAW, data);
+            GLBuffer buf = new GLBuffer(GL31.GL_UNIFORM_BUFFER, dynamic ? GL15.GL_DYNAMIC_DRAW : GL15.GL_STATIC_DRAW, data, this);
             addUniformBuffer(name, buf);
             return buf;
         } else {

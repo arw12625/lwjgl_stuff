@@ -1,101 +1,60 @@
 package game;
 
-import graphics.RenderManager;
-import io.GLFWManager;
-import resource.ResourceManager;
-import script.ScriptManager;
-import sound.SoundManager;
-import update.UpdateManager;
-
+import java.util.Stack;
 /**
  *
  * @author Andrew_2
- * 
- * the base class for the engine
- * Game contains references to the core singleton managers
- * Game must run in the main thread that has an opengl context
- * Game is a singleton for now to allow possible inheritance
- * 
- * Game also serves as the root component
- * 
  */
-public class Game extends Component {
+public abstract class Game extends Component implements Runnable {
 
-    public GLFWManager glfwManager;
-    public UpdateManager updateManager;
-    public ResourceManager resourceManager;
-    public ScriptManager scriptManager;
-    public SoundManager soundManager;
-    public RenderManager renderManager;
+    GameStateManager stateManager;
     
-    private boolean requestQuit = false;
-    private boolean initializing = true;
-
-    private static Game instance = null;
-    
-    public static Game getInstance() {
-        if(instance == null) {
-            instance = new Game();
-        }
-        return instance;
-    }
-    
-    private Game() {
+    public Game(GameStateManager stateManager) {
         super(null);
+        this.stateManager = stateManager;
+        stateManager.pushState(new EngineConstruct());
     }
-    
-    public void start() {
-        create();
-        run();
-        //destroy();
-    }
-
-    //initialize the core managers in the specific order required
-    public void create() {
-        this.glfwManager = GLFWManager.getInstance();
-        this.updateManager = UpdateManager.getInstance();
-        updateManager.start();
-        this.resourceManager = ResourceManager.getInstance();
-        resourceManager.start();
-        this.renderManager = RenderManager.getInstance();
-        renderManager.start();
-        this.scriptManager = ScriptManager.getInstance();
-        this.soundManager = SoundManager.getInstance();
-    }
-    
-    public void run() {
-        initializing = false;
-        while(running()) {
-            glfwManager.refresh();
-        }
-        close();
-    }
-
+   
     @Override
-    public void destroy() {
-        throw new UnsupportedOperationException("Destroy game with request quit");
+    public final void run() {
+        stateManager.setState(new EngineInit());
+        engineInit();
+        stateManager.setState(new EngineRun());
+        engineRun();
+        stateManager.setState(new EngineRelease());
+        engineRelease();
     }
     
-    private void close() {
-        soundManager.destroy();
-        resourceManager.destroy();
-        updateManager.destroy();
-        glfwManager.destroy();
-        this.destroyInternal();
-        System.exit(0);
-    }
-    
-    //any object may exit the game via this method
-    public void requestQuit() {
-        requestQuit = true;
-    }
-    
-    
-    public boolean running() {
-        return !requestQuit;
-    }
-    public boolean initializing() {
-        return initializing;
-    }
+    public abstract void end();
 
+    protected abstract void engineInit();
+    protected abstract void engineRun();
+    protected abstract void engineRelease();
+    
+    //EngineConstruct is the state representing the initial state before starting
+    private final static class EngineConstruct implements GameState{}
+    //EngineInit is the state representing the initialization of integral engine features
+    protected static class EngineInit implements GameState{}
+    //EngineRun is the state representing the engine in its normal operating state
+    //All game specific states should derive from this class
+    public static class EngineRun implements GameState{}
+    //EngineEnd is the state representing the shutdown of the integral engine features
+    protected static class EngineRelease implements GameState{}
+ 
+    public GameStateManager getStateStack() {
+        return stateManager;
+    }
+    
+    public static boolean isEngineInit(GameState state) {
+        return state instanceof EngineInit;
+    }
+    
+    public static boolean isEngineRunning(GameState state) {
+        return state instanceof EngineRun;
+    }
+    
+    public static boolean isEngineReleased(GameState state) {
+        return state instanceof EngineRelease;
+    }
+    
 }

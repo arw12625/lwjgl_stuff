@@ -50,7 +50,7 @@ public class WavefrontModel extends Data {
     }
 
     @Override
-    public void load(String path) {
+    public void load(String path, ResourceManager resourceManager) {
         vertices = new ArrayList<>();
         normals = new ArrayList<>();
         texCoords = new ArrayList<>();
@@ -61,7 +61,7 @@ public class WavefrontModel extends Data {
         String directory = ResourceManager.getDirectory(path);
 
         try {
-            BufferedReader reader = ResourceManager.getInstance().getReader(path);
+            BufferedReader reader = resourceManager.getReader(path);
             HashMap<String, Integer> materialMap = new HashMap<>();
             String line;
             int currentMaterial = -1;
@@ -77,7 +77,7 @@ public class WavefrontModel extends Data {
                 //Read material library
                 if (line.startsWith("mtllib ")) {
                     String materialFileName = spaceSplit[1];
-                    Map<String, Material> libMats = loadMaterialLibrary(directory, materialFileName);
+                    Map<String, Material> libMats = loadMaterialLibrary(directory, materialFileName, resourceManager);
                     for (String matName : libMats.keySet()) {
                         materialMap.put(matName, materialList.size());
                         materialList.add(libMats.get(matName));
@@ -138,10 +138,10 @@ public class WavefrontModel extends Data {
         }
     }
 
-    public static Map<String, Material> loadMaterialLibrary(String pathPrefix, String materialFilePath) {
+    public static Map<String, Material> loadMaterialLibrary(String pathPrefix, String materialFilePath, ResourceManager resourceManager) {
         HashMap<String, Material> materials = new HashMap<String, Material>();
         try {
-            BufferedReader reader = ResourceManager.getInstance().getReader(pathPrefix + materialFilePath);
+            BufferedReader reader = resourceManager.getReader(pathPrefix + materialFilePath);
             String line;
             Material parseMaterial = null;
             String materialName = "";
@@ -190,10 +190,11 @@ public class WavefrontModel extends Data {
         return materials;
     }
 
-    public static Map<String, Material> loadMaterialLibrary(String materialFilePath) {
-        return loadMaterialLibrary("", materialFilePath);
+    public static Map<String, Material> loadMaterialLibrary(String materialFilePath, ResourceManager resourceManager) {
+        return loadMaterialLibrary("", materialFilePath, resourceManager);
     }
 
+    @Override
     public String toString() {
         if (objects == null) {
             return super.toString();
@@ -211,10 +212,10 @@ public class WavefrontModel extends Data {
         return !texCoords.isEmpty();
     }
 
-    public static void convertAndExportModel(String name, String pathIn, String pathOut) {
-        WavefrontModel model = ResourceManager.getInstance().loadResource(pathIn, new WavefrontModel()).getData();
+    public static void convertAndExportModel(String name, String pathIn, String pathOut, ResourceManager resourceManager) {
+        WavefrontModel model = resourceManager.loadResource(pathIn, new WavefrontModel()).getData();
         JSONData data = convertModel(model);
-        data.write(pathOut);
+        data.write(pathOut, resourceManager);
     }
 
     public static JSONData convertModel(WavefrontModel model) {

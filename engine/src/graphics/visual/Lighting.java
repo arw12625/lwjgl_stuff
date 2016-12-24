@@ -30,8 +30,10 @@ public class Lighting extends Renderable {
     private ByteBuffer dirLightBuffer;
     
     private GLBuffer glBuffer;
+    
+    private RenderManager renderManager;
 
-    public Lighting(Component parent, String name) {
+    public Lighting(Component parent, String name, RenderManager renderManager) {
         super(parent);
         
         this.name = name;
@@ -39,7 +41,8 @@ public class Lighting extends Renderable {
         dirLightBuffer = BufferUtils.createByteBuffer(4 * 4 * 4 * MAX_LIGHTS + 4 * 4); //lights + header
         numDirLights = 0;
 
-        glBuffer = RenderManager.getInstance().createUniformBuffer(name, dirLightBuffer, true);
+        this.renderManager = renderManager;
+        glBuffer = renderManager.createUniformBuffer(name, dirLightBuffer, true);
 
     }
     
@@ -52,7 +55,7 @@ public class Lighting extends Renderable {
     public void render() {
         dirLightBuffer.rewind();
         dirLightBuffer.putInt(numDirLights).putInt(0).putInt(0).putInt(0);//padding
-        Matrix4f view = RenderManager.getInstance().getViewMatrix();
+        Matrix4f view = renderManager.getViewMatrix();
         int i = 0;
         while(i < numDirLights) {
             DirLight light = dirLights.get(i);
