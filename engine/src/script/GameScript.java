@@ -17,13 +17,15 @@ import update.Updateable;
  */
 public class GameScript extends Component implements Updateable {
 
-    private String script;
+    private final String name;
+    private final String script;
     private Object scriptObject;
     private Map<Class, Object> interfaces;
     private List<Updateable> updates;
     
-    protected GameScript(Component parent, String script) {
+    protected GameScript(Component parent, String name, String script) {
         super(parent);
+        this.name = name;
         this.script = script;
         interfaces = new HashMap<>();
         updates = new ArrayList<>();
@@ -36,6 +38,10 @@ public class GameScript extends Component implements Updateable {
     
     public String getScript() {
         return script;
+    }
+    
+    public String getName() {
+        return name;
     }
     
     protected Map<Class, Object> getInterfaces() {

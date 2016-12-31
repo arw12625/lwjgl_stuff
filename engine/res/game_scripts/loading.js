@@ -19,7 +19,7 @@ var key = new io.KeyCallback(obj, {
             }
         }
     });
-    while(!window.isCreated()){}
+    
     
 window.addKeyCallback(key);
 

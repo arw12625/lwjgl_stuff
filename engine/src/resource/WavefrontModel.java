@@ -14,6 +14,8 @@ import org.joml.Vector3f;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -22,14 +24,16 @@ import org.lwjgl.BufferUtils;
  * loads a wavefront .obj file and associated material .mtl files
  * also contains code for converting model to custom json format
  */
-public class WavefrontModel extends Data {
+public class WavefrontModel implements Data {
 
     private List<Vector3f> vertices;
     private List<Vector3f> normals;
     private List<Vector2f> texCoords;
     private List<Material> materialList;
     private List<WavefrontMesh> objects;
-
+    
+    private static final Logger LOG = LoggerFactory.getLogger(WavefrontModel.class);
+            
     public WavefrontModel() {
     }
 
@@ -134,12 +138,17 @@ public class WavefrontModel extends Data {
             reader.close();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("{}",e);
         }
+    }
+    
+    @Override
+    public void write(String path, ResourceManager resourceManager) {
+        throw new UnsupportedOperationException("Writing Wavefront models isn't supported yet");
     }
 
     public static Map<String, Material> loadMaterialLibrary(String pathPrefix, String materialFilePath, ResourceManager resourceManager) {
-        HashMap<String, Material> materials = new HashMap<String, Material>();
+        HashMap<String, Material> materials = new HashMap<>();
         try {
             BufferedReader reader = resourceManager.getReader(pathPrefix + materialFilePath);
             String line;
@@ -185,7 +194,7 @@ public class WavefrontModel extends Data {
             materials.put(materialName, parseMaterial);
             reader.close();
         } catch (IOException ex) {
-            ex.printStackTrace();
+            LOG.error("{}",ex);
         }
         return materials;
     }

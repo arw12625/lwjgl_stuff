@@ -8,6 +8,8 @@ import java.nio.ByteBuffer;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -17,6 +19,8 @@ import org.joml.Vector4f;
  */
 public class Utilities {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
+    
     public static void putVector4f(ByteBuffer b, Vector4f v) {
         b.putFloat(v.x).putFloat(v.y).putFloat(v.z).putFloat(v.w);
     }
@@ -32,10 +36,12 @@ public class Utilities {
     
     public static void printByteBuffer(ByteBuffer buf) {
         ByteBuffer copy = buf.duplicate();
+        StringBuilder out = new StringBuilder();
         while(copy.hasRemaining()) {
-            System.out.print(copy.get() + " ");
+            out.append(copy.get() + " ");
         }
-        System.out.println();
+        out.append("\n");
+        LOG.debug(out.toString());
     }
     
 }

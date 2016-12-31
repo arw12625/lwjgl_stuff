@@ -1,10 +1,13 @@
 package resource;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -12,11 +15,17 @@ import org.lwjgl.BufferUtils;
  * 
  * A data wrapper for binary data written into a ByteBuffer
  */
-public class BufferData extends Data {
+public class BufferData implements Data {
 
-    ByteBuffer data;
+    private ByteBuffer data;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(BufferData.class);
     
     public BufferData(){}
+    
+    public BufferData(ByteBuffer data) {
+        this.data = data;
+    }
     
     @Override
     public void load(String path, ResourceManager resourceManager) {
@@ -27,14 +36,38 @@ public class BufferData extends Data {
 
                 data = BufferUtils.createByteBuffer((int) fc.size() + 1);
 
-                while (fc.read(data) != -1);
+                fc.read(data);
 
-                data.rewind();
+                data.flip();
                 fis.close();
                 fc.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("{}", e);
         }
+    }
+    
+    @Override
+    public void write(String path, ResourceManager resourceManager) {
+        try {
+                FileOutputStream fos = resourceManager.getFileOutputStream(path);
+                FileChannel fc = fos.getChannel();
+
+                data = BufferUtils.createByteBuffer((int) fc.size() + 1);
+
+                fc.write(data);
+                
+                data.rewind();
+
+                fos.close();
+                fc.close();
+        } catch (IOException e) {
+            LOG.error("{}", e);
+        }
+    }
+    
+    @Override
+    public boolean isValid() {
+        return data != null;
     }
     
     public ByteBuffer getData() {

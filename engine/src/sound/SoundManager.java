@@ -6,6 +6,8 @@ import org.joml.Vector3f;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.ALContext;
 import org.lwjgl.openal.ALDevice;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -21,21 +23,29 @@ public class SoundManager {
 
     Map<String, Integer> sources;
     Map<String, Integer> buffers;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(SoundManager.class);
 
     public SoundManager() {
+        LOG.info("SoundManager constructor entered");
         sources = new HashMap<>();
         buffers = new HashMap<>();
+        LOG.info("SoundManager constructor exited");
 
     }
 
     public void initialize() {
+        LOG.info("SoundManager init entered");
         context = ALContext.create();
         context.makeCurrent();
+        LOG.info("SoundManager init exited");
     }
 
     public void release() {
+        LOG.info("SoundManager release entered");
         context.destroy();
         context.getDevice().destroy();
+        LOG.info("SoundManager release exited");
     }
 
     public String loadBuffer(String name, SoundData data) {

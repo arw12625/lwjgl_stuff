@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import util.Bufferable;
 import util.BufferableHelper;
 
@@ -28,6 +30,8 @@ public class AttributeDataStruct extends AttributeData {
     Map<String, Integer> groupingIndices;
     List<Bufferable> groupings;
     List<List<PreAttribute>> preAttributes;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(AttributeDataStruct.class);
     
     public static AttributeDataStruct createAttributeDataStruct(VAORender vao, String name, int usage, RenderManager renderManager) {
         return createAttributeDataStruct(vao, name, usage, 0, renderManager);
@@ -54,7 +58,7 @@ public class AttributeDataStruct extends AttributeData {
     }
     @Override
     public void createAttribute(String name, int location, GLType type, int offset, int stride) {
-        System.err.println("Attribute created without backing data: " + name);
+        LOG.warn("Attribute created without backing data: {}", name);
         super.createAttribute(name, location, type, offset, stride);
     }
     
@@ -93,7 +97,6 @@ public class AttributeDataStruct extends AttributeData {
             groupingOffset += groupings.get(i).getSize();
         }
         capacity = groupingOffset;
-        System.out.println(groupingOffset);
         ByteBuffer adsData = BufferUtils.createByteBuffer(capacity);
         bh = new BufferableHelper(adsData, groupings);
         setData(bh.getByteBuffer());

@@ -9,10 +9,13 @@ import graphics.RenderManager;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
 import javax.imageio.ImageIO;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -21,12 +24,14 @@ import org.lwjgl.opengl.GL30;
  * loads image data into a bitmap contained in a buffer
  * used java.imageio
  */
-public class TextureData extends Data {
+public class TextureData implements Data {
 
     private ByteBuffer buffer;
     private int width, height;
     private TextureType type;
-
+    
+    private static final Logger LOG = LoggerFactory.getLogger(TextureData.class);
+    
     public TextureData() {}
     
     public TextureData(ByteBuffer data, int width, int height) {
@@ -40,8 +45,9 @@ public class TextureData extends Data {
         this.type = type;
     }
     
-    public TextureType getType() {
-        return type;
+    @Override
+    public boolean isValid() {
+        return buffer != null && width != 0 && height != 0;
     }
     
     @Override
@@ -50,7 +56,7 @@ public class TextureData extends Data {
         try {
             image = ImageIO.read(resourceManager.getFile(path));
         } catch (IOException ex) {
-            ex.printStackTrace();
+            LOG.error("{}",ex);
         }
 
         width = image.getWidth();
@@ -76,6 +82,39 @@ public class TextureData extends Data {
 
     }
     
+    
+    @Override
+    public void write(String path, ResourceManager resourceManager) {
+        int[] pixels = new int[width*height];
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int pixel = 0;
+                pixel &= buffer.get() << 16;
+                pixel &= buffer.get() << 8;
+                pixel &= buffer.get() << 0;
+                pixel &= buffer.get() << 24;
+                
+                pixels[y * width + x] = pixel;
+            }
+        }
+        buffer.rewind();
+        
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+        
+        image.setRGB(0, 0, width, height, pixels, 0, width);
+        
+        try {
+            ImageIO.write(image, "PNG", resourceManager.getFile(path));
+        } catch (IOException ex) {
+            LOG.error("{}",ex);
+        }
+        
+        LOG.debug("Image written to {},\nImage writting has not been tested", path);
+    }
+    
+    public TextureType getType() {
+        return type;
+    }
     public ByteBuffer getBuffer() {
         return buffer;
     }

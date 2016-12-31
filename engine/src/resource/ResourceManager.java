@@ -16,8 +16,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -35,23 +35,29 @@ public class ResourceManager implements Runnable {
     private Map<String, Resource> resources;
     private boolean toRelease, isReleased;
     
+    private static final Logger LOG = LoggerFactory.getLogger(ResourceManager.class);
+    
     public ResourceManager() {
+        LOG.info("ResourceManager constructor entered");
         queuedResources = new ConcurrentLinkedQueue<>();
         resources = new HashMap<>();
+        LOG.info("ResourceManager constructor exited");
         
     }
     
     public void release() {
+        LOG.info("ResourceManager release entered");
         toRelease = true;
         while(!isReleased) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
-                Logger.getLogger(ResourceManager.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error("{}", ex);
             }
         }
         /*queuedResources.clear();
         resources.clear();*/
+        LOG.info("ResourceManager release exited");
     }
 
     //this method will return a resource with the appropriate data from the path
@@ -76,11 +82,14 @@ public class ResourceManager implements Runnable {
         }
         r.loadData(this);
         resources.put(r.getPath(), r);
+        LOG.debug("{} loaded from {}", r.getData().getClass().getName(), r.getPath());
         return r;
     }
 
     @Override
     public void run() {
+        LOG.info(Game.threadMarker, "Resource");
+        LOG.info("ResourceManager run");
         while (!toRelease) {
             Resource r;
             while ((r = queuedResources.poll()) != null) {
@@ -89,7 +98,7 @@ public class ResourceManager implements Runnable {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
-                Logger.getLogger(ResourceManager.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error("{}", ex);
             }
         }
         isReleased = true;
@@ -139,7 +148,7 @@ public class ResourceManager implements Runnable {
         try {
             return new BufferedWriter(new FileWriter(getFile(path)));
         } catch (IOException ex) {
-            ex.printStackTrace();
+            LOG.error("{}",ex);
         }
         return null;
     }
@@ -148,7 +157,7 @@ public class ResourceManager implements Runnable {
         try {
             return new FileInputStream(getResourceDirectory() + path);
         } catch (IOException ex) {
-            ex.printStackTrace();
+            LOG.error("{}", ex);
         }
         return null;
     }
@@ -157,7 +166,7 @@ public class ResourceManager implements Runnable {
         try {
             return new FileOutputStream(getResourceDirectory() + path);
         } catch (IOException ex) {
-            ex.printStackTrace();
+            LOG.error("{}", ex);
         }
         return null;
     }
@@ -171,7 +180,7 @@ public class ResourceManager implements Runnable {
         try {
             return new BufferedReader(new FileReader(getResourceDirectory() + path));
         } catch (FileNotFoundException ex) {
-            ex.printStackTrace();
+            LOG.error("{}",ex);
         }
         return null;
     }

@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
 import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import resource.JSONData;
 
@@ -27,6 +29,8 @@ public class PolyList {
     ByteBuffer faceBuffer;              //the indices of the vertices that form the faces
     List<List<Attribute>> attributes;   //the list of the list of attributes with the same offset (the same data)
     String transform;                   //the string version of the transform ex) a 4x4 matrix
+    
+    private static final Logger LOG = LoggerFactory.getLogger(PolyList.class);
 
     public PolyList(Element polygonsXML, Map<String, Source> sources, String polyName) {
 
@@ -44,7 +48,7 @@ public class PolyList {
         String[] vcount = ((Element) polygonsXML.getElementsByTagName("vcount").item(0)).getTextContent().split(" ");
         vertsPerFace = Integer.parseInt(vcount[0]);
         if (vertsPerFace != 3) {
-            System.out.println("no support for not triangulated meshes");
+            LOG.error("no support for not triangulated meshes");
         }
 
         //order the face data into an 2d array with rows corresponding to vertices and columns to attributes

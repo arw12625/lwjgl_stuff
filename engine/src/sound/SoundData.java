@@ -21,7 +21,7 @@ import resource.ResourceManager;
  * load audio files into raw format
  *  supported file formats are raw and ogg
  */
-public class SoundData extends Data {
+public class SoundData implements Data {
 
     private ByteBuffer data;
     private int sampleRate = 44100, format = AL10.AL_FORMAT_STEREO16;
@@ -59,6 +59,12 @@ public class SoundData extends Data {
             data = resourceManager.loadResource(path,
                     new resource.BufferData()).getData().getData();
         }
+    }
+    
+
+    @Override
+    public void write(String path, ResourceManager resourceManager) {
+        throw new UnsupportedOperationException("Writing Sounds is not supported yet"); //To change body of generated methods, choose Tools | Templates.
     }
 
     public ByteBuffer getData() {

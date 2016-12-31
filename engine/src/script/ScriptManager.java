@@ -8,6 +8,8 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import resource.ResourceManager;
 import resource.TextData;
 import update.UpdateManager;
@@ -29,14 +31,21 @@ public class ScriptManager {
     
     private UpdateManager updateManager;
     private ResourceManager resourceManager;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(ScriptManager.class);
+    
+    public static final String NO_SCRIPT_NAME = "noScriptName";
 
     public ScriptManager(UpdateManager updateManager, ResourceManager resourceManager) {
+        LOG.info("ScriptManager constructor entered");
         scripts = new ArrayList<>();
         this.updateManager = updateManager;
         this.resourceManager = resourceManager;
+        LOG.info("ScriptManager constructor exited");
     }
 
     public void initialize() {
+        LOG.info("ScriptManager init entered");
         
         // create a script engine manager
         ScriptEngineManager factory = new ScriptEngineManager();
@@ -60,6 +69,7 @@ public class ScriptManager {
         eval("collada = JavaImporter(Packages.resource.collada)");
         
         eval("GLFW = JavaImporter(org.lwjgl.glfw).GLFW;");
+        eval("slf4j = JavaImporter(org.slf4j);");
         eval("KeyCallbackExtender = Java.extend(Java.type(\"io.KeyCallback\"));");
         
         setCurrentObject(null);
@@ -71,13 +81,15 @@ public class ScriptManager {
             startupScripts[i] = loadScript("engine_scripts/" + startupPaths[i]);
             startupScripts[i].enable(true);
         }
+        LOG.info("ScriptManager init exited");
     }
     
     public void release() {
-        /*
-        while(false) {
-            
-        }*/
+        LOG.info("ScriptManager release entered");
+        
+        //for now, no cleanup is necessary
+                
+        LOG.info("ScriptManager release exited");
     }
     
     public void addGLobal(String name, Object value) {
@@ -88,8 +100,7 @@ public class ScriptManager {
         try {
             return engine.eval(command);
         } catch (Exception e) {
-            System.err.println(command);
-            e.printStackTrace();
+            LOG.error("{}\n {}",e,command);
         }
         return null;
     }
@@ -111,10 +122,14 @@ public class ScriptManager {
     }
     
     public GameScript createScript(Component parent, String script) {
+        return createScript(parent, NO_SCRIPT_NAME, script);
+    }
+    
+    public GameScript createScript(Component parent,String name, String script) {
         setCurrentObject(parent);
-        GameScript gs = new GameScript(parent, script);
+        GameScript gs = new GameScript(parent, name, script);
         setCurrentScript(gs);
-        Object obj = eval(addScriptWrapper(script));
+        Object obj = eval(addScriptWrapper(gs));
         gs.setScriptObject(obj);
         updateManager.add(gs);
         return gs;
@@ -125,6 +140,10 @@ public class ScriptManager {
     }
     
     public GameScript loadScript(Component parent, String path) {
+        return loadScript(parent, NO_SCRIPT_NAME, path);
+    }
+    
+    public GameScript loadScript(Component parent, String name, String path) {
         return createScript(parent, TextData.loadText(path, resourceManager));
     }
 
@@ -138,12 +157,13 @@ public class ScriptManager {
      * Add dispatch capability for script
      * Add special dispatch for update
      */
-    private String addScriptWrapper(String textString) {
-        String header = "(function() { var obj = currentObject; var script = currentScript; "
+    private String addScriptWrapper(GameScript gs) {
+        String header = "(function() { var obj = currentObject; var script = currentScript;"
+                + "var LOG = slf4j.LoggerFactory.getLogger(\"" + GameScript.class.getName() + "." + gs.getName() + "\");"
                 + "function addDispatch(name, dispatch) {script.addDispatch(name, new update.Action(dispatch))};"
                 + "function addUpdate(updateF) {script.addUpdate(new update.Updateable(updateF))};";
         String footer = "})()";
-        return header + textString + footer;
+        return header + gs.getScript() + footer;
     }
     
     

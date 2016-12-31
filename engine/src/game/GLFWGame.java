@@ -1,8 +1,8 @@
 package game;
 
 import io.GLFWManager;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import resource.ResourceManager;
 import update.UpdateManager;
 /**
@@ -19,6 +19,8 @@ public class GLFWGame extends Game {
     
     private boolean requestEnd;
     
+    static final Logger LOG = LoggerFactory.getLogger(GLFWGame.class);
+    
     public GLFWGame(GameStateManager gameStateManager, GLFWManager glfwManager,
             UpdateManager updateManager, ResourceManager resourceManager) {
         super(gameStateManager);
@@ -34,7 +36,7 @@ public class GLFWGame extends Game {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
-                Logger.getLogger(GLFWGame.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error("{}", ex);
             }
         }
         updateThread = new Thread(updateManager);
@@ -52,7 +54,7 @@ public class GLFWGame extends Game {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
-                Logger.getLogger(GLFWGame.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error("{}", ex);
             }
         }
         
@@ -67,7 +69,7 @@ public class GLFWGame extends Game {
     }
     
     @Override
-    public void end() {
+    public void endRequested() {
         this.requestEnd = true;
     }
     

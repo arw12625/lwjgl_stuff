@@ -4,6 +4,7 @@ testing = function() {
 
 oloy = function() {
     print("yajnasebesiarp");
+    LOG.info("yajnasebesiarp");
 }
 
 quit = function() {

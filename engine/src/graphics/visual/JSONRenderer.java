@@ -162,7 +162,8 @@ public class JSONRenderer extends Renderable {
     
     public static JSONRenderer createJSONRenderer(Component parent, String path,
             RenderManager renderManager, ResourceManager resourceManager) {
-        JSONRenderer r = new JSONRenderer(parent, resourceManager.loadResource(path, new JSONData()).getData(),
+        JSONData jsonData = JSONData.loadJSONData(path, resourceManager);
+        JSONRenderer r = new JSONRenderer(parent, jsonData,
         renderManager, resourceManager);
         renderManager.add(r);
         return r;

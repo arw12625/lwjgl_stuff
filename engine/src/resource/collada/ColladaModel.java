@@ -10,6 +10,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -26,12 +28,14 @@ import resource.ResourceManager;
  * 
  * does not support animation yet
  */
-public class ColladaModel extends Data {
+public class ColladaModel implements Data {
 
     Map<String, MaterialWrapper> materials; // key = material.getName()
     Map<String, List<PolyList>> geometries; // key is geometry name, list is of all polylists in that geometry
     List<PolyList> visualMeshes; //the list of polylists in the visualScene
     String directory;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(ColladaModel.class);
 
     public ColladaModel() {
     }
@@ -53,10 +57,11 @@ public class ColladaModel extends Data {
             visualMeshes = processVisualScene(collada, materials, geometries);
 
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("{}",ex);
         }
     }
 
+    @Override
     public void write(String outPath, ResourceManager resourceManager) {
 
         //instantiate new JSONData
@@ -88,6 +93,11 @@ public class ColladaModel extends Data {
         
         //write to file
         modelData.write(outPath, resourceManager);
+    }
+    
+    @Override
+    public boolean isValid() {
+        return visualMeshes != null && !visualMeshes.isEmpty();
     }
 
     public static void convertAndExport(String inPath, String outPath, ResourceManager resourceManager) {

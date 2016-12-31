@@ -13,6 +13,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -24,12 +26,14 @@ import org.lwjgl.BufferUtils;
  * Binary data loaded into individual buffers according to the buffers list in the json
  * 
  */
-public class JSONData extends Data {
+public class JSONData implements Data {
 
     private String name;
     private List<ByteBuffer> buffers;
     private JSONObject object;
     private int bufferPosition;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(JSONData.class);
 
     public JSONData() {
     }
@@ -68,10 +72,11 @@ public class JSONData extends Data {
             }
             
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("{}",e);
         }
     }
 
+    @Override
     public void write(String path, ResourceManager resourceManager) {
 
         try {
@@ -96,11 +101,16 @@ public class JSONData extends Data {
             channel.close();
             fs.flush(); fs.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("{}",e);
         }
 
     }
 
+    @Override
+    public boolean isValid() {
+        return buffers != null && !buffers.isEmpty() && object != null;
+    }
+    
     public JSONObject getJSON() {
         return object;
     }
@@ -136,6 +146,10 @@ public class JSONData extends Data {
     @Override
     public String toString() {
         return getJSONName();
+    }
+    
+    public static JSONData loadJSONData(String path, ResourceManager resourceManager) {
+        return resourceManager.loadResource(path, new JSONData()).getData();
     }
     
     public static float[] jsonToFloatArray(JSONArray json) {

@@ -3,9 +3,11 @@ package test;
 import game.Game;
 import game.GameObject;
 import game.StandardGame;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.script.ScriptException;
+import graphics.visual.JSONRenderer;
+import graphics.visual.SkyBox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import resource.collada.ColladaModel;
 import script.GameScript;
 import script.ScriptManager;
 
@@ -17,9 +19,14 @@ import script.ScriptManager;
  */
 public class GameTest implements Runnable {
     
-    StandardGame game;
+    private StandardGame game;
+    
+    static final Logger LOG = LoggerFactory.getLogger(GameTest.class);
 
     public static void main(String[] args) {
+        
+        LOG.info("GameTest start");
+        
         StandardGame game = StandardGame.createStandardGame();
         
         GameTest gt = new GameTest(game);
@@ -36,20 +43,36 @@ public class GameTest implements Runnable {
     
     @Override
     public void run() {
+        
+        LOG.info("GameTest thread start");
         while(!Game.isEngineRunning(game.getStateStack().getState())) {
-            Thread.yield();
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                LOG.error("{}", ex);
+            }
         
         }
         ScriptManager scriptManager = game.getScriptManager();
+        
         
         GameObject scene = new GameObject(game);
         GameScript load = scriptManager.loadScript(scene, "game_scripts/loading.js");
         GameScript print = scriptManager.loadScript(scene, "game_scripts/print_test.js");
         
-        while(!Game.isEngineReleased(game.getStateStack().getState())) {
-            Thread.yield();
+        SkyBox.createSkyBox(game);
+        
+        LOG.info("GameTest scripts added");
+        
+        while(!Game.isEngineExited(game.getStateStack().getState())) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                LOG.error("{}", ex);
+            }
         }
-        System.out.println("GameTest finished");
+        
+        LOG.info("GameTest thread finished");
     }
     
 }

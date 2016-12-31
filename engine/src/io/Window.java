@@ -5,7 +5,8 @@ import java.nio.DoubleBuffer;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
@@ -26,12 +27,9 @@ import update.Action;
  */
 public class Window {
 
-    private boolean windowCreated;
-    private boolean contextCreated;
-    private long handle;
-
     private GLFWWindowCloseCallback exitCallback;
 
+    private long handle;
     private String title;
     private int width, height;
 
@@ -46,24 +44,54 @@ public class Window {
     private DoubleBuffer mouseXBuffer, mouseYBuffer;
     private float mouseX, mouseY;
     private float dMouseX, dMouseY;
-    private boolean isDestroyed;
+    private boolean isReleased;
     private boolean toRelease;
     private long numRefreshes;
+    private boolean isInitialized;
+    private boolean contextCreated;
 
     private List<Action> exitCallbackActions;
+    
+    private GLFWManager glfwManager;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(Window.class);
 
-    protected Window(String title, int width, int height) {
+    public Window(String title, int width, int height, GLFWManager glfwManager) {
         this.title = title;
         this.width = width;
         this.height = height;
+        this.glfwManager = glfwManager;
         exitCallbackActions = new CopyOnWriteArrayList<>();
+        LOG.info("Window constructed: {}", title);
     }
 
-    protected void initialize() {
+    public void initialize() {
+        glfwManager.addWindow(this);
+        while(!isInitialized()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                LOG.error("{}",ex);
+            }
+        }
+    }
+    
+    public void release() {
+        toRelease = true;
+        while(!isReleased) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                LOG.error("{}",ex);
+            }
+        }
+    }
+    
+    protected void glfwInitialize() {
         initializeWindow();
         initializeMouse();
         initializeKeyBoard();
-        windowCreated = true;
+        isInitialized = true;
     }
 
     private void initializeWindow() {
@@ -169,7 +197,7 @@ public class Window {
 
     public void bindGLContext() {
         if (contextCreated) {
-            System.err.println("Context already bound for this window");
+            LOG.error("Context already bound for this window");
         } else {
             // Make the OpenGL context current
             glfwMakeContextCurrent(handle);
@@ -187,15 +215,19 @@ public class Window {
         }
     }
 
-    protected void destroy() {
+    protected void glfwRelease() {
         Callbacks.glfwReleaseCallbacks(handle);
         GLFW.glfwDestroyWindow(handle);
-        isDestroyed = true;
+        isReleased = true;
     }
 
     public void swapBuffers() {
 
         glfwSwapBuffers(handle); // swap the color buffers
+    }
+    
+    public String getTitle() {
+        return title;
     }
 
     public int getWidth() {
@@ -213,11 +245,11 @@ public class Window {
     public void setDimension(int width, int height) {
         //this.width = width;
         //this.height = height;
-        System.err.println("THIS FUNCTION NOT YET SUPPORTED");
+        LOG.warn("SetDimension is not yet supported");
     }
 
-    public boolean isCreated() {
-        return windowCreated;
+    public boolean isInitialized() {
+        return isInitialized;
     }
 
     public float getMouseX() {
@@ -263,17 +295,6 @@ public class Window {
 
     private void closeWindow() {
         glfwSetWindowShouldClose(handle, 1);
-    }
-
-    public void release() {
-        toRelease = true;
-        while (!isDestroyed) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(Window.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
     }
 
     public TextInput getDefaultTextInput() {

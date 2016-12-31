@@ -1,28 +1,17 @@
 package io;
 
 import game.Game;
-import game.GameStateManager;
-import java.nio.DoubleBuffer;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import static org.lwjgl.glfw.GLFW.*;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.glfw.GLFWKeyCallback;
-import org.lwjgl.glfw.GLFWMouseButtonCallback;
-import org.lwjgl.glfw.GLFWVidMode;
-import org.lwjgl.glfw.GLFWWindowCloseCallback;
-import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
-import static org.lwjgl.opengl.GL11.GL_FALSE;
-import static org.lwjgl.opengl.GL11.GL_TRUE;
-import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.system.MemoryUtil.NULL;
+import util.LoggingOutputStream;
 
 /**
  *
@@ -41,13 +30,17 @@ public class GLFWManager implements Runnable {
     private boolean toRelease;
     private boolean isReleased;
     private boolean isInitialized;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(GLFWManager.class);
 
     public GLFWManager() {
 
+        LOG.info("GLFWManager constructor exited");
         windows = new ArrayList<>();
         windowsToInitialize = new ConcurrentLinkedQueue<>();
 
         numRefreshes = 0;
+        LOG.info("GLFWManager constructor exited");
 
     }
 
@@ -55,10 +48,18 @@ public class GLFWManager implements Runnable {
         return isInitialized;
     }
 
-    @Override
-    public void run() {
+    private void initialize() {
+        LOG.info("GLFWManager init entered");
         initializeError();
         isInitialized = true;
+        LOG.info("GLFWManager init exited");
+    }
+    
+    @Override
+    public void run() {
+        LOG.info(Game.threadMarker, "GLFW");
+        LOG.info("GLFWManager run");
+        initialize();
 
         while (!toRelease) {
 
@@ -66,7 +67,7 @@ public class GLFWManager implements Runnable {
 
             Window w;
             while ((w = windowsToInitialize.poll()) != null) {
-                w.initialize();
+                w.glfwInitialize();
                 windows.add(w);
             }
 
@@ -74,7 +75,7 @@ public class GLFWManager implements Runnable {
             while(i < windows.size()) {
                 w = windows.get(i);
                 if(w.toRelease()) {
-                    w.destroy();
+                    w.glfwRelease();
                     windows.remove(i);
                 } else {
                     w.refresh();
@@ -87,7 +88,7 @@ public class GLFWManager implements Runnable {
             try {
                 Thread.sleep(1000/60);
             } catch (InterruptedException ex) {
-                Logger.getLogger(GLFWManager.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error("{}", ex);
             }
         }
 
@@ -97,7 +98,8 @@ public class GLFWManager implements Runnable {
     private void initializeError() {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
-        glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
+        glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(
+                new PrintStream(new LoggingOutputStream(LOG), true)));
 
         // Initialize GLFW. Most GLFW functions will not work before doing this.
         if (glfwInit() != GL11.GL_TRUE) {
@@ -107,14 +109,17 @@ public class GLFWManager implements Runnable {
     }
 
     public void release() {
+        
+        LOG.info("GLFWManager release entered");
         toRelease = true;
         while(!isReleased) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
-                Logger.getLogger(GLFWManager.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error("{}", ex);
             }
         }
+        LOG.info("GLFWManager release exited");
     }
 
     private void releaseGLFW() {
@@ -126,10 +131,9 @@ public class GLFWManager implements Runnable {
         isReleased = true;
     }
 
-    public Window createWindow(String title, int width, int height) {
-        Window window = new Window(title, width, height);
+    protected void addWindow(Window window) {
         windowsToInitialize.add(window);
-        return window;
+        LOG.info("Window added to GLFWManager: {}", window.getTitle());
     }
 
     public boolean isRelased() {

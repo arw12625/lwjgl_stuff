@@ -6,8 +6,8 @@ import static graphics.RenderManager.DEFAULT_WINDOW_WIDTH;
 import io.GLFWManager;
 import io.KeyCallback;
 import io.Window;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
 import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
 import org.lwjgl.glfw.GLFWKeyCallback;
@@ -23,17 +23,23 @@ import update.UpdateManager;
  */
 public class StandardGame extends GLFWGame {
 
+    private Window window;
     private RenderManager renderManager;
     private ScriptManager scriptManager;
     private SoundManager soundManager;
     
     private Thread renderThread;
     
+    private static final Logger LOG = LoggerFactory.getLogger(StandardGame.class);
+
+    
     public StandardGame(GameStateManager gameStateManager, GLFWManager glfwManager,
             UpdateManager updateManager, ResourceManager resourceManager,
+            Window window,
             RenderManager renderManager, ScriptManager scriptManager,
             SoundManager soundManager) {
         super(gameStateManager, glfwManager, updateManager, resourceManager);
+        this.window = window;
         this.renderManager = renderManager;
         this.scriptManager = scriptManager;
         this.soundManager = soundManager;
@@ -43,9 +49,10 @@ public class StandardGame extends GLFWGame {
     protected void engineInit() {
         super.engineInit();
         
+        window.initialize();
+        
         renderThread = new Thread(renderManager);
         renderThread.start();
-        Window w = renderManager.getWindow();
         
         soundManager.initialize();
         
@@ -53,7 +60,7 @@ public class StandardGame extends GLFWGame {
         
         scriptManager.addGLobal("gameInst", this);
         scriptManager.addGLobal("renderManager", renderManager);
-        scriptManager.addGLobal("window", w);
+        scriptManager.addGLobal("window", window);
         scriptManager.addGLobal("resourceManager", getResourceManager());
         scriptManager.addGLobal("scriptManager", scriptManager);
         scriptManager.addGLobal("soundManager", soundManager);
@@ -64,8 +71,8 @@ public class StandardGame extends GLFWGame {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
-                Logger.getLogger(StandardGame.class.getName()).log(Level.SEVERE, null, ex);
-            }
+                LOG.error("{}", ex);
+                }
         }
         
         
@@ -74,7 +81,7 @@ public class StandardGame extends GLFWGame {
 
             @Override
             public void act(Object... args) {
-                end();
+                requestEnd();
             }
             
         };
@@ -87,12 +94,10 @@ public class StandardGame extends GLFWGame {
                 }
             }
         };
-        w.addExitCallback(exitAction);
-        w.addKeyCallback(exitKeyCallback);
+        window.addExitCallback(exitAction);
+        window.addKeyCallback(exitKeyCallback);
         
-        
-        
-        
+       
     }
     
     @Override
@@ -115,6 +120,7 @@ public class StandardGame extends GLFWGame {
     }
     
     public static StandardGame createStandardGame() {
+        LOG.info("Creating Standard Game");
         GameStateManager gameStateManager = new GameStateManager();
         GLFWManager glfwManager = new GLFWManager();
         UpdateManager updateManager = new UpdateManager();
@@ -122,14 +128,18 @@ public class StandardGame extends GLFWGame {
         
         ScriptManager scriptManager = new ScriptManager(updateManager, resourceManager);
         
-        Window window = glfwManager.createWindow("test", 
-                DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+        Window window = new Window("test", DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, glfwManager);
         RenderManager renderManager = new RenderManager(window);
         SoundManager soundManager = new SoundManager();
         
-        StandardGame game = new StandardGame(gameStateManager, glfwManager, updateManager, resourceManager, renderManager, scriptManager, soundManager);
+        LOG.info("Standard Game managers created");
+        
+        StandardGame game = new StandardGame(gameStateManager, glfwManager, updateManager, resourceManager, window, renderManager, scriptManager, soundManager);
         Thread gameThread = new Thread(game);
         gameThread.start();
+        
+        LOG.info("Standard Game started");
+        
         return game;
     }
 }

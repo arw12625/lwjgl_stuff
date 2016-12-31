@@ -1,4 +1,4 @@
-
+LOG.info("EH?");
 print("Game.js Start");
 
 var lighting;

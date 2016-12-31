@@ -8,8 +8,8 @@ import game.Game;
 import game.GameStateManager;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -29,14 +29,20 @@ public class UpdateManager implements Runnable{
     public static final int defaultUpdateTime = 1000 / 60; // 60 fps
     private boolean toRelease, isReleased;
     
+    private static final Logger LOG = LoggerFactory.getLogger(UpdateManager.class);
+    
     public UpdateManager() {
+        LOG.info("UpdateManager constructor entered");
         entities = new ArrayList<>();
         this.updateTime = defaultUpdateTime;
         lastTime = getTime();
+        LOG.info("UpdateManager constructor exited");
     }
     
     @Override
     public void run() {
+        LOG.info(Game.threadMarker, "Update");
+        LOG.info("UpdateManager run");
         while (!toRelease) {
 
             long currentTime = getTime();
@@ -46,7 +52,7 @@ public class UpdateManager implements Runnable{
             try {
                 Thread.sleep(updateTime);
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error("{}", e);
             }
             lastTime = currentTime;
 
@@ -73,14 +79,16 @@ public class UpdateManager implements Runnable{
     }
     
     public void release() {
+        LOG.info("UpdateManager release entered");
         toRelease = true;
         while(!isReleased) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
-                Logger.getLogger(UpdateManager.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error("{}", ex);
             }
         }
+        LOG.info("UpdateManager release exited");
     }
 
     public static long getTime() {

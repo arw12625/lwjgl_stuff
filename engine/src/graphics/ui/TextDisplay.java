@@ -19,6 +19,8 @@ import static org.lwjgl.opengl.GL11.glDrawArrays;
 import static org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW;
 import org.lwjgl.stb.STBTTAlignedQuad;
 import org.lwjgl.stb.STBTruetype;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import resource.ResourceManager;
 
 /**
@@ -58,6 +60,8 @@ public class TextDisplay extends Renderable {
             
     static final int defaultCapacity = 100;
     static final int NUM_BYTES = (2 + 2) * 4 * Float.BYTES;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(TextDisplay.class);
 
     public TextDisplay(Component parent, FontData f, float x, float y, float width, float height, int capacity, ShaderProgram shaderProgram) {
 
@@ -135,11 +139,12 @@ public class TextDisplay extends Renderable {
                     continue;
                 }
                 if (c < 32 || 128 <= c) {
-                    System.err.println("unrecongnized character " + c);
+                    LOG.error("Unrecongnized character " + c);
                     i++;
                     continue;
                 }
 
+                
                 STBTruetype.stbtt_GetBakedQuad(f.getCdata(), f.getBitMapWidth(), f.getBitMapHeight(), c - 32, xPos, yPos, quad, 1);
                 float currentWidth = quad.x1() - x;
                 float currentHeight = quad.y1() - y;
@@ -208,13 +213,14 @@ public class TextDisplay extends Renderable {
     }
     
     public static TextDisplay createTextDisplay(Component parent, FontData font,
-            float width, float height, float x, float y,
+            float x, float y, float width, float height, 
             int capacity, StandardGame game) {
         return createTextDisplay(parent, font, width, height, x, y,
                 capacity, game.getRenderManager(), game.getResourceManager());
     }
+    
     public static TextDisplay createTextDisplay(Component parent,
-            FontData font, float width, float height, float x, float y,
+            FontData font, float x, float y, float width, float height,
             int capacity, RenderManager renderManager, ResourceManager resourceManager) {
         ShaderProgram shader = ShaderProgram.loadProgram("shaders/text.vs", "shaders/text.fs",renderManager, resourceManager);
         TextDisplay td = new TextDisplay(parent, font, x, y, width, height, capacity, shader);

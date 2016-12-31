@@ -26,6 +26,8 @@ import static org.lwjgl.opengl.GL20.glShaderSource;
 import static org.lwjgl.opengl.GL30.glBindBufferBase;
 import org.lwjgl.opengl.GL31;
 import static org.lwjgl.opengl.GL31.GL_UNIFORM_BUFFER;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import resource.ResourceManager;
 import resource.TextData;
 
@@ -62,6 +64,8 @@ public class ShaderProgram {
     private int nextAttribLoc;
     
     private RenderManager renderManager;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(ShaderProgram.class);
 
     public ShaderProgram(String vertexText, String fragmentText, RenderManager renderManager) {
         this.renderManager = renderManager;
@@ -125,22 +129,21 @@ public class ShaderProgram {
             glShaderSource(vertexShader, vertexText);
             glCompileShader(vertexShader);
             if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) == GL_FALSE) {
-                System.err.println("Vertex shader wasn't able to be compiled correctly. Error log:");
-                System.err.println(glGetShaderInfoLog(vertexShader, 1024));
+                LOG.error("Vertex shader wasn't able to be compiled correctly. Error log:\n{}",
+                        glGetShaderInfoLog(vertexShader, 1024));
             }
             glShaderSource(fragmentShader, fragmentText);
             glCompileShader(fragmentShader);
             if (glGetShaderi(fragmentShader, GL_COMPILE_STATUS) == GL_FALSE) {
-                System.err.println("Fragment shader wasn't able to be compiled correctly. Error log:");
-                System.err.println(glGetShaderInfoLog(fragmentShader, 1024));
+                LOG.error("Fragment shader wasn't able to be compiled correctly. Error log:\n{}", glGetShaderInfoLog(fragmentShader, 1024));
             }
 
             glAttachShader(shaderProgram, vertexShader);
             glAttachShader(shaderProgram, fragmentShader);
             glLinkProgram(shaderProgram);
             if (glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
-                System.err.println("Shader program wasn't linked correctly.");
-                System.err.println(glGetProgramInfoLog(shaderProgram, 1024));
+                LOG.error("Shader program wasn't linked correctly:\n{}",
+                        glGetProgramInfoLog(shaderProgram, 1024));
             }
 
             glDeleteShader(vertexShader);
@@ -166,7 +169,7 @@ public class ShaderProgram {
             } else {
                 location = GL20.glGetAttribLocation(program, name);
                 if(location == -1) {
-                    System.err.println("Attribute not defined in shader: " + name);
+                    LOG.error("Attribute not defined in shader: " + name);
                 } else {
                     addAttributeEntry(name, location);
                 }
@@ -202,7 +205,7 @@ public class ShaderProgram {
         if (loc == null) {
             loc = GL20.glGetUniformLocation(getProgram(), name);
             if(loc == -1) {
-                System.out.println("Uniform not found: " + name);
+                LOG.warn("Uniform not found: " + name);
             }
             uniformLocations.put(name, loc);
         }
@@ -236,7 +239,7 @@ public class ShaderProgram {
         if (texUnit == null) {
             texUnit = texUnitUsed;
             if (texUnit == 8) {
-                System.out.println("TOO MANY TEXTURES");
+                LOG.error("Exceeded number of available texture units");
             }
             texUnitUsed++;
             samplerMap.put(samplerName, texUnit);

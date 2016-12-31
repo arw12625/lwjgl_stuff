@@ -2,7 +2,10 @@ package resource;
 
 import game.StandardGame;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -10,9 +13,11 @@ import java.io.IOException;
  * 
  * for loading plain text files
  */
-public class TextData extends Data {
+public class TextData implements Data {
 
     private String textString;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(TextData.class);
     
     public TextData(){}
 
@@ -28,7 +33,19 @@ public class TextData extends Data {
             }
             this.textString = sb.toString();
         } catch (IOException ex) {
-            ex.printStackTrace();
+            LOG.error("{}",ex);
+        }
+    }
+    
+    @Override
+    public void write(String path, ResourceManager resourceManager) {
+        try {
+            
+            BufferedWriter bw = resourceManager.getWriter(path);
+            bw.write(textString);
+            
+        } catch (IOException ex) {
+            LOG.error("{}",ex);
         }
     }
     
@@ -36,6 +53,10 @@ public class TextData extends Data {
         return textString;
     }
 
+    @Override
+    public boolean isValid() {
+        return textString != null;
+    }
     
     @Override
     public String toString() {
@@ -49,4 +70,5 @@ public class TextData extends Data {
     public static String loadText(String path, ResourceManager resourceManager) {
         return resourceManager.loadResource(path, new TextData()).getData().getTextString();
     }
+
 }

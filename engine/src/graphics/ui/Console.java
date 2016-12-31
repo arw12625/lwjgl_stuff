@@ -13,6 +13,8 @@ import javax.script.ScriptException;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import resource.ResourceManager;
 import resource.TextureData;
 import script.GameScript;
@@ -47,6 +49,8 @@ public class Console extends Renderable {
     private RenderManager renderManager;
     private ResourceManager resourceManager;
     private ScriptManager scriptManager;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(Console.class);
 
     public Console(Component parent, TextInput textInput, int charWidth, int charHeight, int fontSize,
             RenderManager renderManager, ResourceManager resourceManager, ScriptManager scriptManager) {
@@ -69,13 +73,14 @@ public class Console extends Renderable {
     }
     
     public void init() {
-        
         this.keyCallback = new ConsoleKeyCallback();
         renderManager.getWindow().addKeyCallback(keyCallback);
-        //this.display = TextDisplay.createTextDisplay(this, "fonts/cour.ttf", 24, GLFWManager.getInstance().getResX(), GLFWManager.getInstance().getResY(), 20, 25, charCapacity, new Vector4f(1, 0, 1, 1));
+        
         FontData f = FontData.loadFont(defaultFont, "consoleFont", fontSize, 512, 512, defaultColor, renderManager, resourceManager);
-        this.display = TextDisplay.createTextDisplay(this.getParent(), f, 30, 40,charCapacity,
-                renderManager.getWindowWidth(), renderManager.getWindowHeight(), renderManager, resourceManager);
+        this.display = TextDisplay.createTextDisplay(this.getParent(), f, 30, 40,
+                renderManager.getWindowWidth(), renderManager.getWindowHeight(),
+                charCapacity, renderManager, resourceManager);
+        
         TextureData.loadTextureResource("console/console.png", renderManager, resourceManager);
         textures = FlatTexture.createFlatTexture(this, 10, renderManager);
         textures.addTexture("console/console.png", -1, 1, 2, 2);
@@ -140,6 +145,7 @@ public class Console extends Renderable {
             builder.append('\n');
         }
 
+        
         display.setText(builder.toString());
     }
 
@@ -163,9 +169,9 @@ public class Console extends Renderable {
             scriptManager.runScriptObjectMethod(consoleObject, "evaluateLine", line);
         } catch (ScriptException ex) {
             println("Script error");
-            System.out.println("Script error");
+            LOG.error("{}",ex);
         } catch (NoSuchMethodException ex) {
-            ex.printStackTrace();
+            LOG.error("{}",ex);
         }
     }
 
@@ -203,6 +209,9 @@ public class Console extends Renderable {
         c.enable(false);
         c.init();
         game.getRenderManager().add(c);
+        
+        
+        
         return c;
     }
     
@@ -237,6 +246,7 @@ public class Console extends Renderable {
 
         @Override
         public void invoke(long window, int key, int scancode, int action, int mods) {
+            
             if (action == GLFW.GLFW_RELEASE) {
                 return;
             }

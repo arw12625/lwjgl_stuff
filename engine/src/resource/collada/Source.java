@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
@@ -27,7 +29,8 @@ public class Source {
     String[] paramNames;
     
     public static final int precision = 16; //precision for rounding, power of two
-
+    private static final Logger LOG = LoggerFactory.getLogger(Source.class);
+    
     public Source(Element xmlSource) {
         Element dataXML;
         
@@ -113,7 +116,7 @@ public class Source {
         if(floatData == null) {
             return null;
         }
-        //System.out.println("Before " + floatData.length / stride);
+        LOG.trace("Before " + floatData.length / stride);
         
         //the reduced data in integers, maximum size is count
         int[][] reduced = new int[count][stride];
@@ -152,7 +155,7 @@ public class Source {
             }
         }
         b.rewind();
-        //System.out.println("After " + reducedSize);
+        LOG.trace("After " + reducedSize);
         return b;
     }
 

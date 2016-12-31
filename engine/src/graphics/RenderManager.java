@@ -1,6 +1,6 @@
 package graphics;
 
-import io.GLFWManager;
+import game.Game;
 import io.Window;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.joml.AxisAngle4f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -83,8 +83,12 @@ public class RenderManager implements Runnable {
     private boolean toRelase;
     private boolean initialized;
     private boolean released;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(RenderManager.class);
+
 
     public RenderManager(Window window) {
+        LOG.info("RenderManager constructor entered");
         toAdd = new ConcurrentLinkedQueue<>();
         renderables = new ArrayList<>();
         zIndices = new ArrayList<>();
@@ -101,9 +105,13 @@ public class RenderManager implements Runnable {
         uniformBuffers = new HashMap<>();
 
         this.window = window;
+        LOG.info("RenderManager constructor exited");
+        
     }
     
     public void initialize() {
+        
+        LOG.info("RenderManager init entered");
         
         Quaternionf q = new Quaternionf();
         q.set(new AxisAngle4f(0, 0, 0, 1));
@@ -127,6 +135,8 @@ public class RenderManager implements Runnable {
         
         
         initialized = true;
+        
+        LOG.info("RenderManager init exited");
     }
     
     public int getWindowWidth() {
@@ -140,12 +150,12 @@ public class RenderManager implements Runnable {
     @Override
     public void run() {
         
+        LOG.info(Game.threadMarker, "Render");
+        LOG.info("RenderManager run");
         
-        //wait for the window to be created
-        while(!window.isCreated()) {
-            Thread.yield();
-        }
-        //then bind the opengl context of the window to the current thread
+        
+        //the window must already be initialized
+        //bind the opengl context of the window to the current thread
         window.bindGLContext();
         
         initialize();
@@ -156,11 +166,9 @@ public class RenderManager implements Runnable {
             try {
                 Thread.sleep(RENDER_TIME);
             } catch (InterruptedException ex) {
-                Logger.getLogger(RenderManager.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error("{}", ex);
             }
         }
-        
-        window.release();
         
         released = true;
 
@@ -197,14 +205,16 @@ public class RenderManager implements Runnable {
     }
     
     public void release() {
+        LOG.info("RenderManager release entered");
         toRelase = true;
         while(!released) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
-                Logger.getLogger(RenderManager.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error("{}", ex);
             }
         }
+        LOG.info("RenderManager release exited");
     }
 
     public void add(Renderable r) {
@@ -363,7 +373,7 @@ public class RenderManager implements Runnable {
             addUniformBuffer(name, buf);
             return buf;
         } else {
-            System.err.println("buffer already created " + name);
+            LOG.warn("Attempted to create a UniformBuffer with a preexisting name: {}", name);
             return uniformBuffers.get(name);
         }
     }

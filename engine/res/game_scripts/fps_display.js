@@ -6,4 +6,3 @@ var fpsDisp = ui.TextDisplay.createTextDisplay(obj, fpsFont, 200, 200, 20, 430, 
      fpsDisp.setText("FPS: " + Math.floor(1000.0 / delta));
 });
      
-

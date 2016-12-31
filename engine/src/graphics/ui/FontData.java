@@ -20,7 +20,7 @@ import resource.TextureData;
  * 
  * a class representing a true type font and associated bitmap and character map
  */
-public class FontData extends Data implements UniformStruct {
+public class FontData implements UniformStruct, Data {
 
     private String name;
     private String textureName;
@@ -36,6 +36,10 @@ public class FontData extends Data implements UniformStruct {
     
     public static final String colorUniformName = "color", textureUniformName = "tex";
 
+    public FontData() {
+        
+    }
+    
     public FontData(String name, int fontSize, int bitMapWidth, int bitMapHeight, Vector4f color, RenderManager renderManager) {
         this.name = name;
         this.fontSize = fontSize;
@@ -63,6 +67,11 @@ public class FontData extends Data implements UniformStruct {
         FontData font = new FontData(name, fontSize, bitMapWidth, bitMapHeight, color, renderManager);
         resourceManager.loadResource(path, font);
         return font;
+    }
+    
+    @Override
+    public void write(String path, ResourceManager resourceManager) {
+        throw new UnsupportedOperationException("Writing font files is not supported.\nThis isn't a font editing program... yet.");
     }
 
     @Override
