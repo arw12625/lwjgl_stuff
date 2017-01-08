@@ -6,13 +6,16 @@ import game.Component;
  *
  * @author Andrew_2
  */
-public abstract class TextCallback extends Component {
-
-    public TextCallback(Component parent) {
-        super(parent);
+public interface TextCallback {
+    
+    public abstract void pushTextChar(char keyChar);
+    
+    public default boolean isTextCallbackEnabled() {
+        return true;
     }
-    
-    public abstract void push(char keyChar);
-    
+
+    public default boolean isTextCallbackPendingRelease() {
+        return false;
+    }
     
 }

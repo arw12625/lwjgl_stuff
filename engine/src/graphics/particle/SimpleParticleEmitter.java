@@ -4,9 +4,11 @@ import game.Component;
 import game.StandardGame;
 import graphics.AttributeData;
 import graphics.GLType;
+import graphics.RenderLayer;
 import graphics.RenderManager;
 import graphics.ShaderProgram;
-import graphics.VAORender;
+import graphics.VAOAttributes;
+import graphics.View;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.joml.Vector3f;
@@ -27,9 +29,9 @@ public class SimpleParticleEmitter extends ParticleEmitter {
     
     ParticleDistribution pd;
 
-    public SimpleParticleEmitter(Component parent, String name,
+    public SimpleParticleEmitter(String name,
             ShaderProgram sp, int capacity, ParticleDistribution pd) {
-        super(parent, name, sp, capacity, pd.getTransform());
+        super(name, sp, capacity, pd.getTransform());
 
         this.pd = pd;
     }
@@ -51,20 +53,15 @@ public class SimpleParticleEmitter extends ParticleEmitter {
     }
 
     @Override
-    public void render() {
-        super.render();
+    public void render(View view, RenderLayer layer) {
+        super.render(view, layer);
         GL11.glDepthMask(false);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
         GL42.glDrawArraysInstancedBaseInstance(GL11.GL_TRIANGLE_STRIP, 0, VERTS_PER_PART, capacity, offset);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glDepthMask(true);
     }
-
-    @Override
-    public int getZIndex() {
-        return 500;
-    }
-
+    
     @Override
     public int getVertexByteSize() {
         return BYTESIZE;
@@ -82,16 +79,15 @@ public class SimpleParticleEmitter extends ParticleEmitter {
         1f, 1f, 0.0f
     };
 
-    public static SimpleParticleEmitter createParticleEmitter(Component parent, String name, int capacity, Vector3f origin, ParticleEngine engine, StandardGame game) {
+    public static SimpleParticleEmitter createParticleEmitter(String name, int capacity, Vector3f origin, StandardGame game) {
         ShaderProgram shader = ShaderProgram.loadProgram("shaders/particle.vs", "shaders/particle.fs", game);
-        SimpleParticleEmitter emit = new SimpleParticleEmitter(parent, name, shader, capacity, new PointDistribution());
-        engine.addParticleEmitter(emit);
-        game.getRenderManager().add(emit);
+        SimpleParticleEmitter emit = new SimpleParticleEmitter(name, shader, capacity, new PointDistribution());
         return emit;
     }
 
-    public static ParticleEngine createParticleEngine(Component parent, String name, int capacity, StandardGame game) {
-        VAORender vao = new VAORender(game.getRenderManager());
+    public static ParticleEngine createParticleEngine(Component parent, String name, int capacity,
+            StandardGame game) {
+        VAOAttributes vao = new VAOAttributes(game.getRenderManager());
 
         ByteBuffer baseDataBuffer = BufferUtils.createByteBuffer(baseData.length * Float.BYTES);
         baseDataBuffer.asFloatBuffer().put(baseData);
@@ -108,9 +104,7 @@ public class SimpleParticleEmitter extends ParticleEmitter {
         dynamicAttr.createAttribute("center", GLType.GL_3fv, 4, 32);
         dynamicAttr.createAttribute("icolor", GLType.GL_4fv, 16, 32);
 
-        ParticleEngine engine = new ParticleEngine(parent, name, vao);
-        game.getRenderManager().add(engine);
-        game.getUpdateManager().add(engine);
+        ParticleEngine engine = new ParticleEngine(name, vao);
 
         return engine;
     }

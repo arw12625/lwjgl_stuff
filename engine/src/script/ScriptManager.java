@@ -1,7 +1,6 @@
 package script;
 
 import game.Component;
-import game.Game;
 import java.util.ArrayList;
 import java.util.List;
 import javax.script.Invocable;
@@ -12,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import resource.ResourceManager;
 import resource.TextData;
+import update.UpdateLayer;
 import update.UpdateManager;
 /**
  *
@@ -30,8 +30,11 @@ public class ScriptManager {
     private GameScript[] startupScripts;
     
     private UpdateManager updateManager;
+    private UpdateLayer defaultUpdateLayer;
     private ResourceManager resourceManager;
     
+    public static final int DEFAULT_UPDATE_LAYER_INDEX = 0;
+    public static final int DEFAULT_UPDATE_LAYER_SCRIPT_INDEX = 0;
     private static final Logger LOG = LoggerFactory.getLogger(ScriptManager.class);
     
     public static final String NO_SCRIPT_NAME = "noScriptName";
@@ -46,6 +49,9 @@ public class ScriptManager {
 
     public void initialize() {
         LOG.info("ScriptManager init entered");
+        
+        defaultUpdateLayer = UpdateLayer.createUpdateLayer();
+        updateManager.addUpdateLayer(defaultUpdateLayer, DEFAULT_UPDATE_LAYER_INDEX);
         
         // create a script engine manager
         ScriptEngineManager factory = new ScriptEngineManager();
@@ -63,6 +69,7 @@ public class ScriptManager {
         }
         eval("joml = JavaImporter(Packages.org.joml)");
         
+        eval("graphicsUtil = JavaImporter(Packages.graphics.util)");
         eval("visual = JavaImporter(Packages.graphics.visual)");
         eval("particle = JavaImporter(Packages.graphics.particle)");
         eval("ui = JavaImporter(Packages.graphics.ui)");
@@ -79,8 +86,9 @@ public class ScriptManager {
         startupScripts = new GameScript[startupPaths.length];
         for (int i = 0; i < startupScripts.length; i++) {
             startupScripts[i] = loadScript("engine_scripts/" + startupPaths[i]);
-            startupScripts[i].enable(true);
         }
+        
+        
         LOG.info("ScriptManager init exited");
     }
     
@@ -118,33 +126,25 @@ public class ScriptManager {
     }
     
     public GameScript createScript(String script) {
-        return createScript(null, script);
+        return createScript(NO_SCRIPT_NAME, script);
     }
     
-    public GameScript createScript(Component parent, String script) {
-        return createScript(parent, NO_SCRIPT_NAME, script);
-    }
-    
-    public GameScript createScript(Component parent,String name, String script) {
-        setCurrentObject(parent);
-        GameScript gs = new GameScript(parent, name, script);
+    public GameScript createScript(String name, String script) {
+        setCurrentObject(null);
+        GameScript gs = new GameScript(name, script);
         setCurrentScript(gs);
         Object obj = eval(addScriptWrapper(gs));
         gs.setScriptObject(obj);
-        updateManager.add(gs);
+        defaultUpdateLayer.addUpdateable(gs, DEFAULT_UPDATE_LAYER_SCRIPT_INDEX);
         return gs;
     }
     
     public GameScript loadScript(String path) {
-        return loadScript(null, path);
+        return loadScript(NO_SCRIPT_NAME, path);
     }
     
-    public GameScript loadScript(Component parent, String path) {
-        return loadScript(parent, NO_SCRIPT_NAME, path);
-    }
-    
-    public GameScript loadScript(Component parent, String name, String path) {
-        return createScript(parent, TextData.loadText(path, resourceManager));
+    public GameScript loadScript(String name, String path) {
+        return createScript(TextData.loadText(path, resourceManager));
     }
 
     public Object runScriptObjectMethod(GameScript s, String func, Object... args) throws ScriptException, NoSuchMethodException {

@@ -9,24 +9,24 @@ import org.lwjgl.opengl.GL15;
  *
  * @author Andrew_2
  */
-public class VAORender extends VertexArrayObject {
+public class VAOAttributes extends VAO {
 
     //map of vbo's
     Map<String,AttributeData> attributeMap;
     //optional index buffer
     GLBuffer elementArray;
 
-    public VAORender(RenderManager renderManager) {
+    public VAOAttributes(RenderManager renderManager) {
         super(renderManager);
         attributeMap = new HashMap<>();
     }
 
-    protected void addAttributeData(AttributeData a) {
+    public void addAttributeData(AttributeData a) {
         attributeMap.put(a.getName(),a);
     }
 
     public void createElementArray(int usage, ByteBuffer indices) {
-        elementArray = new GLBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, usage, indices, getRenderManager());
+        elementArray = new GLBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, usage, indices);
         setElementArrayChanged();
     }
 

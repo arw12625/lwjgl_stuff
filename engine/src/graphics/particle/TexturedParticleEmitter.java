@@ -4,9 +4,11 @@ import game.Component;
 import game.StandardGame;
 import graphics.AttributeData;
 import graphics.GLType;
+import graphics.RenderLayer;
 import graphics.RenderManager;
 import graphics.ShaderProgram;
-import graphics.VAORender;
+import graphics.VAOAttributes;
+import graphics.View;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.joml.Vector3f;
@@ -33,9 +35,9 @@ public class TexturedParticleEmitter extends ParticleEmitter {
     private static final int textureAtlasSize = 4;
     private static final float texOffsetUnit = 1f / textureAtlasSize;
 
-    public TexturedParticleEmitter(Component parent, String name,
+    public TexturedParticleEmitter(String name,
             ShaderProgram sp, int capacity, ParticleDistribution pd, String texName) {
-        super(parent, name, sp, capacity, pd.getTransform());
+        super(name, sp, capacity, pd.getTransform());
 
         this.pd = pd;
         this.texName = texName;
@@ -64,24 +66,19 @@ public class TexturedParticleEmitter extends ParticleEmitter {
     }
 
     @Override
-    public void initRender() {
-        super.initRender();
+    public void renderInit() {
+        super.renderInit();
         ud.setTexture("tex", texName);
     }
     
     @Override
-    public void render() {
-        super.render();
+    public void render(View view, RenderLayer layer) {
+        super.render(view, layer);
         GL11.glDepthMask(false);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
         GL42.glDrawArraysInstancedBaseInstance(GL11.GL_TRIANGLE_STRIP, 0, 4, capacity, offset);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glDepthMask(true);
-    }
-
-    @Override
-    public int getZIndex() {
-        return 500;
     }
 
     @Override
@@ -98,18 +95,17 @@ public class TexturedParticleEmitter extends ParticleEmitter {
         -5f, -5f, 0.0f, 0, 0,
         5f, -5f, 0.0f, texOffsetUnit, 0,
         -5f, 5f, 0.0f, 0, texOffsetUnit,
-        5f, 5f, 0.0f, texOffsetUnit, texOffsetUnit,};
+        5f, 5f, 0.0f, texOffsetUnit, texOffsetUnit,
+    };
 
-    public static TexturedParticleEmitter createParticleEmitter(Component parent, String name, int capacity, Vector3f origin, ParticleEngine engine, StandardGame game) {
+    public static TexturedParticleEmitter createParticleEmitter(String name, int capacity, Vector3f origin, StandardGame game) {
         ShaderProgram shader = ShaderProgram.loadProgram("shaders/tex_particle.vs", "shaders/tex_particle.fs", game);
-        TexturedParticleEmitter emit = new TexturedParticleEmitter(parent, name, shader, capacity, new PointDistribution(), defaultTextureName);
-        engine.addParticleEmitter(emit);
-        game.getRenderManager().add(emit);
+        TexturedParticleEmitter emit = new TexturedParticleEmitter(name, shader, capacity, new PointDistribution(), defaultTextureName);
         return emit;
     }
 
     public static ParticleEngine createParticleEngine(Component parent, String name, int capacity, StandardGame game) {
-        VAORender vao = new VAORender(game.getRenderManager());
+        VAOAttributes vao = new VAOAttributes(game.getRenderManager());
 
         resource.TextureData.loadTextureResource(defaultTextureName, game);
 
@@ -129,9 +125,7 @@ public class TexturedParticleEmitter extends ParticleEmitter {
         dynamicAttr.createAttribute("center", GLType.GL_3fv, 4, 24);
         dynamicAttr.createAttribute("tex_offset", GLType.GL_2fv, 16,24);
 
-        ParticleEngine engine = new ParticleEngine(parent, name, vao);
-        game.getRenderManager().add(engine);
-        game.getUpdateManager().add(engine);
+        ParticleEngine engine = new ParticleEngine(name, vao);
 
         return engine;
     }
@@ -147,6 +141,7 @@ public class TexturedParticleEmitter extends ParticleEmitter {
             b.putFloat(texOffsetX).putFloat(texOffsetY);
         }
 
+        @Override
         public int getSize() {
             return (1+3+2)*Float.BYTES;
         }

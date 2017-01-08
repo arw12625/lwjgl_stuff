@@ -5,12 +5,11 @@
 package update;
 
 import game.Game;
-import game.GameStateManager;
-import java.util.ArrayList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.lwjgl.glfw.GLFW;
+import util.ZIndexSet;
+import util.ZIndexSetStandard;
 
 /**
  *
@@ -24,7 +23,7 @@ import org.lwjgl.glfw.GLFW;
 public class UpdateManager implements Runnable{
 
     private long lastTime; //last time in milis
-    private final List<Updateable> entities;
+    private final ZIndexSet<UpdateLayer> layers;
     private final long updateTime;
     public static final int defaultUpdateTime = 1000 / 60; // 60 fps
     private boolean toRelease, isReleased;
@@ -33,7 +32,9 @@ public class UpdateManager implements Runnable{
     
     public UpdateManager() {
         LOG.info("UpdateManager constructor entered");
-        entities = new ArrayList<>();
+        
+        layers = ZIndexSetStandard.<UpdateLayer>createCopyOnWriteSet();
+        
         this.updateTime = defaultUpdateTime;
         lastTime = getTime();
         LOG.info("UpdateManager constructor exited");
@@ -47,8 +48,10 @@ public class UpdateManager implements Runnable{
 
             long currentTime = getTime();
             int deltaTime = (int) (currentTime - lastTime);
-            update(deltaTime);
-
+            for(UpdateLayer layer : layers) {
+                layer.update(deltaTime);
+            }
+            
             try {
                 Thread.sleep(updateTime);
             } catch (Exception e) {
@@ -58,24 +61,6 @@ public class UpdateManager implements Runnable{
 
         }
         isReleased = true;
-    }
-
-    private void update(int delta) {
-
-        int i = 0;
-        while(i < entities.size()) {
-            //destoryed entities are reomved and not updated
-            Updateable u = entities.get(i);
-            if (u.isDestroyed()) {
-                entities.remove(i);
-            } else {
-                if (u.isEnabled()) {
-                    u.update(delta);
-                }
-                i++;
-            }
-        }
-
     }
     
     public void release() {
@@ -95,11 +80,11 @@ public class UpdateManager implements Runnable{
         return (long) (GLFW.glfwGetTime() * 1000);
     }
 
-    public void add(Updateable u) {
-        entities.add(u);
+    public void addUpdateLayer(UpdateLayer layer, int zIndex) {
+        layers.add(layer, zIndex);
     }
 
-    public void remove(Updateable u) {
-        entities.remove(u);
+    public void remove(UpdateLayer layer) {
+        layers.remove(layer);
     }
 }

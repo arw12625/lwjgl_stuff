@@ -1,5 +1,6 @@
 package graphics;
 
+import graphics.util.Camera;
 import geometry.Transform;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -10,6 +11,7 @@ import org.joml.Matrix4f;
  */
 public class UniformTransform implements UniformStruct {
 
+    private Camera cam;
     private Matrix4f initTrans;
     private Transform t;
     private Matrix4f pMat, pvmMat, vmMat;
@@ -81,25 +83,25 @@ public class UniformTransform implements UniformStruct {
 
     @Override
     public void updateUniformStruct(UniformData parent) {
-        Matrix4f transMat = t.toMatrix();
+        Matrix4f transMat = t.getMatrix4f();
         if (initTransEnabled) {
             transMat.mul(initTrans);
         }
 
         if (pMatEnabled) {
-            pMat.set(parent.getRenderManager().getProjectionMatrix());
+            pMat.set(cam.getProjectionMatrix());
             int pID = parent.getUniform(pName);
             parent.setUniform(pID, pMat);
         }
 
         if (pvmMatEnabled) {
-            parent.getRenderManager().getProjectionViewMatrix().mul(transMat, pvmMat);
+            cam.getProjectionViewMatrix().mul(transMat, pvmMat);
             int pvmID = parent.getUniform(pvmName);
             parent.setUniform(pvmID, pvmMat);
         }
 
         if (vmMatEnabled || normalEnabled) {
-            parent.getRenderManager().getViewMatrix().mul(transMat, vmMat);
+            cam.getViewMatrix().mul(transMat, vmMat);
         }
         
         if(vmMatEnabled) {
@@ -114,6 +116,10 @@ public class UniformTransform implements UniformStruct {
             parent.setUniform(normalID, normalMat);
         }
 
+    }
+    
+    public void setCamera(Camera c) {
+        this.cam = c;
     }
 
 }

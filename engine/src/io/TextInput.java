@@ -13,14 +13,13 @@ import org.lwjgl.glfw.GLFW;
  * 
  * An extension of keycallback to parse characters from key input
  */
-public class TextInput extends KeyCallback {
+public class TextInput implements KeyCallback {
 
     private List<TextCallback> callbacks;
     private Map<Integer, Character> keyMap;
     private Map<Integer, Character> shiftMap;
 
-    public TextInput(Component  parent) {
-        super(parent);
+    public TextInput() {
         callbacks = new CopyOnWriteArrayList<>();
         keyMap = defaultKeyMap;
         shiftMap = defaultShiftMap;
@@ -31,17 +30,17 @@ public class TextInput extends KeyCallback {
     }
     
     @Override
-    public void invoke(long window, int key, int scancode, int action, int mods) {
+    public void invokeKey(long window, int key, int scancode, int action, int mods) {
         
         char c = parseChar(window, key, scancode, action, mods);
         if(c == '\u0000') {
             return;
         }
         for(TextCallback tcb : callbacks) {
-            if(tcb.isDestroyed()) {
+            if(tcb.isTextCallbackPendingRelease()) {
                 callbacks.remove(tcb);
-            } else if(tcb.isEnabled()) {
-                tcb.push(c);
+            } else if(tcb.isTextCallbackEnabled()) {
+                tcb.pushTextChar(c);
             }
         }
         

@@ -1,23 +1,21 @@
 package graphics.ui;
 
-import game.Component;
 import io.TextCallback;
 
 /**
  *
  * @author Andrew_2
  */
-public class TextArea extends TextCallback {
+public class TextArea implements TextCallback {
 
-    private TextDisplay display;
+    private final TextDisplay display;
 
-    public TextArea(Component parent, TextDisplay display) {
-        super(parent);
+    public TextArea(TextDisplay display) {
         this.display = display;
     }
 
     @Override
-    public void push(char keyChar) {
+    public void pushTextChar(char keyChar) {
         if(keyChar == '\b') {
             display.popChar();
         } else {

@@ -1,10 +1,11 @@
 package graphics.ui;
 
-import game.Component;
 import game.StandardGame;
+import graphics.RenderLayer;
 import graphics.RenderManager;
 import graphics.Renderable;
-import io.GLFWManager;
+import graphics.View;
+import graphics.util.RenderLayer2D;
 import io.KeyCallback;
 import io.TextInput;
 import java.util.ArrayList;
@@ -24,46 +25,55 @@ import script.ScriptManager;
  *
  * @author Andrew_2
  */
-public class Console extends Renderable {
+public class Console implements KeyCallback {
 
-    private ConsoleKeyCallback keyCallback;
-    private TextDisplay display;
+    private TextDisplay textDisplay;
     private TextInput textInput;
-    private FlatTexture textures;
+    private FlatTexture background;
+    
+    private boolean isEnabled, isPendingRelease;
+    
+    private RenderManager renderManager;
+    private RenderLayer renderLayer;
+    private ResourceManager resourceManager;
+    private ScriptManager scriptManager;
     private GameScript consoleObject;
+    
     private StringBuilder currentLine;
     private List<String> previousLines;
     private List<String> inputLines;
+    private StringBuilder builder;
+    
     private int charWidth, charHeight, charCapacity;
     private int lineSelect;
     private int fontSize;
-    
-    private StringBuilder builder;
 
     private static final int dispLineCacheSize = 100;
     private static final int inputLineCacheSize = 10;
     private static final String[] deleteDelimiters = {" ", "\n", "(", ")", "[", "]", "{", "}", "\"", "'", ":", "."};
     private static final String defaultFont = "fonts/cour.ttf";
-    private static final Vector4f defaultColor = new Vector4f(0.5f,0.5f,.5f,1);
+    private static final Vector4f defaultColor = new Vector4f(0.5f, 0.5f, .5f, 1);
     
-    private RenderManager renderManager;
-    private ResourceManager resourceManager;
-    private ScriptManager scriptManager;
-    
+    private static final int TEXT_RENDER_INDEX = 100;
+    private static final int BACKGROUND_RENDER_INDEX = 0;
+    private static final int DEFAULT_RENDER_LAYER_INDEX = graphics.RenderLayer.UI_INDEX;
+
+
     private static final Logger LOG = LoggerFactory.getLogger(Console.class);
 
-    public Console(Component parent, TextInput textInput, int charWidth, int charHeight, int fontSize,
-            RenderManager renderManager, ResourceManager resourceManager, ScriptManager scriptManager) {
-        super(parent);
+    public Console(TextInput textInput, int charWidth, int charHeight, int fontSize,
+            RenderManager renderManager, ResourceManager resourceManager, ScriptManager scriptManager,
+            RenderLayer renderLayer) {
         this.charWidth = charWidth;
         this.charHeight = charHeight;
         charCapacity = charWidth * charHeight;
-        
+
         this.fontSize = fontSize;
         this.textInput = textInput;
         this.scriptManager = scriptManager;
         this.renderManager = renderManager;
         this.resourceManager = resourceManager;
+        this.renderLayer = renderLayer;
 
         currentLine = new StringBuilder();
         previousLines = new ArrayList<>();
@@ -71,21 +81,22 @@ public class Console extends Renderable {
         builder = new StringBuilder();
         lineSelect = 0;
     }
-    
+
     public void init() {
-        this.keyCallback = new ConsoleKeyCallback();
-        renderManager.getWindow().addKeyCallback(keyCallback);
+        renderManager.getWindow().addKeyCallback(this);
         
         FontData f = FontData.loadFont(defaultFont, "consoleFont", fontSize, 512, 512, defaultColor, renderManager, resourceManager);
-        this.display = TextDisplay.createTextDisplay(this.getParent(), f, 30, 40,
+        this.textDisplay = TextDisplay.createTextDisplay(f, 30, 40,
                 renderManager.getWindowWidth(), renderManager.getWindowHeight(),
                 charCapacity, renderManager, resourceManager);
-        
+        renderLayer.addRenderable(textDisplay, TEXT_RENDER_INDEX);
+
         TextureData.loadTextureResource("console/console.png", renderManager, resourceManager);
-        textures = FlatTexture.createFlatTexture(this, 10, renderManager);
-        textures.addTexture("console/console.png", -1, 1, 2, 2);
-        
-        consoleObject = scriptManager.loadScript(this, "game_scripts/console.js");
+        background = FlatTexture.createFlatTexture(10, renderManager);
+        background.addTexture("console/console.png", -1, 1, 2, 2);
+        renderLayer.addRenderable(background, BACKGROUND_RENDER_INDEX);
+
+        consoleObject = scriptManager.loadScript("game_scripts/console.js");
     }
 
     private void processCursor(int key) {
@@ -145,8 +156,7 @@ public class Console extends Renderable {
             builder.append('\n');
         }
 
-        
-        display.setText(builder.toString());
+        textDisplay.setText(builder.toString());
     }
 
     private List<String> formatLine(String line) {
@@ -169,9 +179,9 @@ public class Console extends Renderable {
             scriptManager.runScriptObjectMethod(consoleObject, "evaluateLine", line);
         } catch (ScriptException ex) {
             println("Script error");
-            LOG.error("{}",ex);
+            LOG.error("{}", ex);
         } catch (NoSuchMethodException ex) {
-            LOG.error("{}",ex);
+            LOG.error("{}", ex);
         }
     }
 
@@ -197,91 +207,110 @@ public class Console extends Renderable {
         }
     }
 
-    public static Console createConsole(Component parent, StandardGame game) {
-        return createConsole(parent, 24, 40, 12, game);
+    public static Console createConsole(StandardGame game) {
+        return createConsole(24, 40, 12, game);
 
     }
 
-    public static Console createConsole(Component parent, int fontSize, int charWidth, int charHeight, StandardGame game) {
+    public static Console createConsole(int fontSize, int charWidth, int charHeight, StandardGame game) {
+        
+        RenderLayer2D layer = RenderLayer2D.createRenderLayer2D();
+        game.getRenderManager().addRenderLayer(layer, DEFAULT_RENDER_LAYER_INDEX);
+        
+        return createConsole(fontSize, charWidth, charHeight, game, layer);
+    }
+    
+    public static Console createConsole(StandardGame game, RenderLayer layer) {
+        return createConsole(24, 40, 12, game, layer);
+    }
+    
+    public static Console createConsole(int fontSize, int charWidth, int charHeight, StandardGame game, RenderLayer layer) {
+        
         TextInput ti = game.getRenderManager().getWindow().getDefaultTextInput();
-        Console c = new Console(parent, ti, charWidth, charHeight, fontSize,
-        game.getRenderManager(), game.getResourceManager(), game.getScriptManager());
-        c.enable(false);
+
+        
+        Console c = new Console(ti, charWidth, charHeight, fontSize,
+                game.getRenderManager(), game.getResourceManager(), game.getScriptManager(),
+                layer);
         c.init();
-        game.getRenderManager().add(c);
-        
-        
-        
+        c.consoleEnable(false);
+
         return c;
     }
     
-    @Override
-    public int getZIndex() {
-        return RenderManager.HUD_Z_INDEX;
-    }
-    
-    @Override
-    public void initRender() {
-        textures.initRender();
-        display.initRender();
-    }
 
-    @Override
-    public void render() {
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
-        textures.render();
-        display.render();
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-    }
-    
     public GameScript getScript() {
         return consoleObject;
     }
 
-    private class ConsoleKeyCallback extends KeyCallback {
+    @Override
+    public void invokeKey(long window, int key, int scancode, int action, int mods) {
 
-        public ConsoleKeyCallback() {
-            super(Console.this);
+        if (action == GLFW.GLFW_RELEASE) {
+            return;
         }
+        processCursor(key);
 
-        @Override
-        public void invoke(long window, int key, int scancode, int action, int mods) {
-            
-            if (action == GLFW.GLFW_RELEASE) {
-                return;
+        char c = textInput.parseChar(window, key, scancode, action, mods);
+        if (c == '\n') {
+            if (mods != GLFW.GLFW_MOD_SHIFT) {
+                evalCurrentLine();
+            } else {
+                currentLine.append('\n');
             }
-            processCursor(key);
-
-            char c = textInput.parseChar(window, key, scancode, action, mods);
-            if (c == '\n') {
-                if (mods != GLFW.GLFW_MOD_SHIFT) {
-                    evalCurrentLine();
-                } else {
-                    currentLine.append('\n');
+        } else if (c == '\b') {
+            if (mods == GLFW.GLFW_MOD_CONTROL) {
+                int newLength = -1;
+                for (String s : deleteDelimiters) {
+                    newLength = Math.max(newLength, currentLine.lastIndexOf(s));
                 }
-            } else if (c == '\b') {
-                if (mods == GLFW.GLFW_MOD_CONTROL) {
-                    int newLength = -1;
-                    for (String s : deleteDelimiters) {
-                        newLength = Math.max(newLength, currentLine.lastIndexOf(s));
-                    }
-                    newLength = Math.min(newLength + 1, currentLine.length() - 1);
-                    newLength = Math.max(newLength, 0);
-                    currentLine.setLength(newLength);
-                } else {
-                    if (currentLine.length() > 0) {
-                        currentLine.setLength(currentLine.length() - 1);
-                    }
+                newLength = Math.min(newLength + 1, currentLine.length() - 1);
+                newLength = Math.max(newLength, 0);
+                currentLine.setLength(newLength);
+            } else {
+                if (currentLine.length() > 0) {
+                    currentLine.setLength(currentLine.length() - 1);
                 }
-            } else if (c == '\t') {
-                currentLine.append("   ");
-            } else if (c == GLFW.GLFW_KEY_GRAVE_ACCENT) {
-
-            } else if (c != '\u0000') {
-                currentLine.append(c);
             }
-            updateDisplay();
+        } else if (c == '\t') {
+            currentLine.append("   ");
+        } else if (c == GLFW.GLFW_KEY_GRAVE_ACCENT) {
+
+        } else if (c != '\u0000') {
+            currentLine.append(c);
         }
-
+        updateDisplay();
     }
+    
+    public void consoleEnable(boolean enable) {
+        this.isEnabled = enable;
+        textDisplay.renderEnable(enable);
+        background.renderEnable(enable);
+        
+    }
+    
+    public void requestConsoleRelease() {
+        this.isPendingRelease = true;
+        textDisplay.renderRelease();
+        background.renderRelease();
+    }
+    
+    public boolean isConsoleEnabled() {
+        return isEnabled;
+    }
+
+    public boolean isConsolePendingRelease() {
+        return isPendingRelease;
+    }
+
+    @Override
+    public boolean isKeyCallbackEnabled() {
+        return isConsoleEnabled();
+    }
+
+    @Override
+    public boolean isKeyCallbackPendingRelease() {
+        return isConsolePendingRelease();
+    }
+
 }

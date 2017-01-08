@@ -1,5 +1,9 @@
-package graphics;
+package graphics.util;
 
+import graphics.AttributeData;
+import graphics.GLType;
+import graphics.RenderManager;
+import graphics.VAOAttributes;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,18 +37,18 @@ public class AttributeDataStruct extends AttributeData {
     
     private static final Logger LOG = LoggerFactory.getLogger(AttributeDataStruct.class);
     
-    public static AttributeDataStruct createAttributeDataStruct(VAORender vao, String name, int usage, RenderManager renderManager) {
+    public static AttributeDataStruct createAttributeDataStruct(VAOAttributes vao, String name, int usage, RenderManager renderManager) {
         return createAttributeDataStruct(vao, name, usage, 0, renderManager);
     }
     
-    public static AttributeDataStruct createAttributeDataStruct(VAORender vao, String name, int usage, int divisor, RenderManager renderManager) {
+    public static AttributeDataStruct createAttributeDataStruct(VAOAttributes vao, String name, int usage, int divisor, RenderManager renderManager) {
         AttributeDataStruct ad = new AttributeDataStruct(name, usage, divisor, renderManager);
         vao.addAttributeData(ad);
         return ad;
     }
     
     protected AttributeDataStruct(String name, int usage, int divisor, RenderManager renderManager) {
-        super(name, usage, divisor, renderManager);
+        super(name, usage, divisor);
         groupingIndices = new HashMap<>();
         groupings = new ArrayList<>();
         preAttributes = new ArrayList<>();

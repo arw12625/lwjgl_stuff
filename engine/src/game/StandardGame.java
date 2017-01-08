@@ -1,8 +1,6 @@
 package game;
 
 import graphics.RenderManager;
-import static graphics.RenderManager.DEFAULT_WINDOW_HEIGHT;
-import static graphics.RenderManager.DEFAULT_WINDOW_WIDTH;
 import io.GLFWManager;
 import io.KeyCallback;
 import io.Window;
@@ -29,6 +27,9 @@ public class StandardGame extends GLFWGame {
     private SoundManager soundManager;
     
     private Thread renderThread;
+    
+    public static final int DEFAULT_WINDOW_WIDTH = 640;
+    public static final int DEFAULT_WINDOW_HEIGHT = 480;
     
     private static final Logger LOG = LoggerFactory.getLogger(StandardGame.class);
 
@@ -85,10 +86,11 @@ public class StandardGame extends GLFWGame {
             }
             
         };
-        KeyCallback exitKeyCallback = new KeyCallback(this) {
+        
+        KeyCallback exitKeyCallback = new KeyCallback() {
             
             @Override
-            public void invoke(long window, int key, int scancode, int action, int mods) {
+            public void invokeKey(long window, int key, int scancode, int action, int mods) {
                 if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
                     exitAction.act();
                 }

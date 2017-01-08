@@ -1,18 +1,18 @@
 package graphics.ui;
 
-import game.Component;
 import game.StandardGame;
 import graphics.AttributeData;
 import graphics.GLType;
+import graphics.RenderLayer;
 import graphics.RenderManager;
 import graphics.Renderable;
+import graphics.util.RenderableAdapter;
 import graphics.ShaderProgram;
 import graphics.UniformData;
-import graphics.VAORender;
-import io.GLFWManager;
+import graphics.VAOAttributes;
+import graphics.View;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.GL_QUADS;
 import static org.lwjgl.opengl.GL11.glDrawArrays;
@@ -32,7 +32,7 @@ import resource.ResourceManager;
  * rectangular area
  *
  */
-public class TextDisplay extends Renderable {
+public class TextDisplay extends RenderableAdapter {
 
     private StringBuilder text;
     private boolean changed;
@@ -50,22 +50,21 @@ public class TextDisplay extends Renderable {
     private int capacity;
     private ShaderProgram sp;
     private UniformData ud;
-    private VAORender vao;
+    private VAOAttributes vao;
     private AttributeData attr;
     private ByteBuffer buffer;
     private RenderManager renderManager;
 
     private float lineSpacing;
     private float characterSpacing;
-            
+
     static final int defaultCapacity = 100;
     static final int NUM_BYTES = (2 + 2) * 4 * Float.BYTES;
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(TextDisplay.class);
 
-    public TextDisplay(Component parent, FontData f, float x, float y, float width, float height, int capacity, ShaderProgram shaderProgram) {
+    public TextDisplay(FontData f, float x, float y, float width, float height, int capacity, ShaderProgram shaderProgram) {
 
-        super(parent);
         this.f = f;
         this.x = x;
         this.y = y;
@@ -75,41 +74,40 @@ public class TextDisplay extends Renderable {
 
         lineSpacing = 0;
         characterSpacing = 0;
-        
+
         text = new StringBuilder();
         changed = false;
         xPos = BufferUtils.createFloatBuffer(1);
         yPos = BufferUtils.createFloatBuffer(1);
 
         renderManager = shaderProgram.getRenderManager();
-        vao = new VAORender(renderManager);
+        vao = new VAOAttributes(renderManager);
         attr = AttributeData.createAttributeData(vao, "text", GL_DYNAMIC_DRAW);
         buffer = BufferUtils.createByteBuffer(capacity * NUM_BYTES);
         attr.setData(buffer);
         attr.createAttribute("vertex_position", GLType.GL_2fv, 0, 16);
         attr.createAttribute("vertex_tex_coord", GLType.GL_2fv, 8, 16);
-        
+
         quad = STBTTAlignedQuad.create();
         this.sp = shaderProgram;
-        
+
         ud = new UniformData(sp);
         ud.addStruct(f);
         sp.setUniformData(ud);
     }
 
     @Override
-    public void initRender() {
+    public void renderInit() {
         sp.createAndCompileShader();
-        
+
         vao.generateVAO();
         vao.setShaderAttributeLocations(sp);
 
-
+        setRenderInitialized();
     }
 
     @Override
-    public void render() {
-
+    public void render(View view, RenderLayer layer) {
 
         //if the text has changed, all characters are recalculated
         if (changed) {
@@ -120,7 +118,7 @@ public class TextDisplay extends Renderable {
             float yRes = renderManager.getWindowHeight();
             xPos.put(0, x);
             yPos.put(0, y);
-            
+
             charNum = 0;
             buffer.rewind();
             int i = 0;
@@ -144,7 +142,6 @@ public class TextDisplay extends Renderable {
                     continue;
                 }
 
-                
                 STBTruetype.stbtt_GetBakedQuad(f.getCdata(), f.getBitMapWidth(), f.getBitMapHeight(), c - 32, xPos, yPos, quad, 1);
                 float currentWidth = quad.x1() - x;
                 float currentHeight = quad.y1() - y;
@@ -159,25 +156,23 @@ public class TextDisplay extends Renderable {
                 float newX1 = quad.x1() / xRes * 2 - 1f;
                 float newY0 = -quad.y0() / yRes * 2 + 1f;
                 float newY1 = -quad.y1() / yRes * 2 + 1f;
-                
+
                 buffer.putFloat(newX0).putFloat(newY0).putFloat(quad.s0()).putFloat(quad.t0());
                 buffer.putFloat(newX0).putFloat(newY1).putFloat(quad.s0()).putFloat(quad.t1());
                 buffer.putFloat(newX1).putFloat(newY1).putFloat(quad.s1()).putFloat(quad.t1());
                 buffer.putFloat(newX1).putFloat(newY0).putFloat(quad.s1()).putFloat(quad.t0());
-                
-                        
-                        
+
                 xPos.put(0, xPos.get(0) + characterSpacing);
                 i++;
                 charNum++;
             }
 
             buffer.rewind();
-            
+
             attr.setChanged();
             changed = false;
         }
-        
+
         renderManager.useAndUpdateVAO(vao);
         renderManager.useShaderProgram(sp);
 
@@ -211,27 +206,20 @@ public class TextDisplay extends Renderable {
         }
         changed = true;
     }
-    
-    public static TextDisplay createTextDisplay(Component parent, FontData font,
-            float x, float y, float width, float height, 
+
+    public static TextDisplay createTextDisplay(FontData font,
+            float x, float y, float width, float height,
             int capacity, StandardGame game) {
-        return createTextDisplay(parent, font, width, height, x, y,
+        return createTextDisplay(font, x, y,width, height,
                 capacity, game.getRenderManager(), game.getResourceManager());
     }
-    
-    public static TextDisplay createTextDisplay(Component parent,
+
+    public static TextDisplay createTextDisplay(
             FontData font, float x, float y, float width, float height,
             int capacity, RenderManager renderManager, ResourceManager resourceManager) {
-        ShaderProgram shader = ShaderProgram.loadProgram("shaders/text.vs", "shaders/text.fs",renderManager, resourceManager);
-        TextDisplay td = new TextDisplay(parent, font, x, y, width, height, capacity, shader);
-        renderManager.add(td);
+        ShaderProgram shader = ShaderProgram.loadProgram("shaders/text.vs", "shaders/text.fs", renderManager, resourceManager);
+        TextDisplay td = new TextDisplay(font, x, y, width, height, capacity, shader);
         return td;
     }
 
-    @Override
-    public int getZIndex() {
-        return 1000;
-    }
-
-    
 }

@@ -9,13 +9,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.joml.AxisAngle4f;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.opengl.GL13;
@@ -26,6 +24,8 @@ import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import org.lwjgl.opengl.GL31;
 import resource.Resource;
 import resource.TextureData;
+import util.ZIndexSet;
+import util.ZIndexSetStandard;
 
 /**
  *
@@ -40,21 +40,20 @@ import resource.TextureData;
  */
 public class RenderManager implements Runnable {
 
-    //a queue of renderables added but not yet initialize for rendering
-    private Queue<Renderable> toAdd;
-    //a list of all objects to render sorted by z-index
-    private List<Renderable> renderables;
-    //the z-indices corresponding with the above renderables
-    private List<Integer> zIndices;
+    //the window this instance manages
+    private Window window;
+    private boolean toRelase;
+    private boolean initialized;
+    private boolean released;
 
-    //the viewpoint and corresponding matrices for convienince
-    private Matrix4f projectionMatrix;
-    private Matrix4f projectionViewMatrix;
-    private ViewPoint vp;
+    //A list of all view associated with this instance
+    private Set<View> views;
+    //A list of ordered layers
+    private ZIndexSet<RenderLayer> layers;
 
-    //the last Vertex Array Object in use
-    private VertexArrayObject vao;
-    
+    //the current Vertex Array Object in use
+    private VAO vao;
+
     //the last shader program used
     private ShaderProgram shaderProgram;
 
@@ -65,59 +64,38 @@ public class RenderManager implements Runnable {
     //a map from texture name to texture handles used by opengl
     private Map<String, Integer> textureHandles;
 
-    //named uniform opengl buffers
-    private Map<String, GLBuffer> uniformBuffers;
-
-    public static final int DEFAULT_WINDOW_WIDTH = 640;
-    public static final int DEFAULT_WINDOW_HEIGHT = 480;
-    
-    public static final int HUD_Z_INDEX = 1000;
-    public static final int DEFAULT_Z_INDEX = 0;
-    public static final int PRE_RENDER_Z_INDEX = -1000;
-    
     public static final int restartIndex = -1;
-    
-    public static final int RENDER_TIME = 1000 / 60;
-    
-    private Window window;
-    private boolean toRelase;
-    private boolean initialized;
-    private boolean released;
-    
-    private static final Logger LOG = LoggerFactory.getLogger(RenderManager.class);
 
+    public static final int RENDER_TIME = 1000 / 60;
+
+    private static final Logger LOG = LoggerFactory.getLogger(RenderManager.class);
 
     public RenderManager(Window window) {
         LOG.info("RenderManager constructor entered");
-        toAdd = new ConcurrentLinkedQueue<>();
-        renderables = new ArrayList<>();
-        zIndices = new ArrayList<>();
 
-        projectionMatrix = new Matrix4f();
-        projectionMatrix.identity();
-        projectionViewMatrix = new Matrix4f();
-        projectionViewMatrix.identity();
+        views = new CopyOnWriteArraySet<>();
+        layers = ZIndexSetStandard.<RenderLayer>createCopyOnWriteSet();
 
         texturesToUpload = new ConcurrentLinkedQueue<>();
         texturesToUploadName = new ConcurrentLinkedQueue<>();
         textureHandles = new HashMap<>();
 
-        uniformBuffers = new HashMap<>();
-
         this.window = window;
         LOG.info("RenderManager constructor exited");
-        
+
     }
-    
+
+    public void addView(View view) {
+        views.add(view);
+    }
+
+    public void addRenderLayer(RenderLayer layer, int index) {
+        layers.add(layer, index);
+    }
+
     public void initialize() {
-        
+
         LOG.info("RenderManager init entered");
-        
-        Quaternionf q = new Quaternionf();
-        q.set(new AxisAngle4f(0, 0, 0, 1));
-        vp = new ViewPoint(new Vector3f(0, 0, 10), q);
-        //setOrthographicProjection(16, 12, -.1f, -10);
-        setPespectiveProjection(3.14f / 3, 1.333f, .1f, 100);
 
         //opengl settings
         glClearColor(.15f, 0.15f, .15f, 0);
@@ -129,16 +107,15 @@ public class RenderManager implements Runnable {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         GL31.glPrimitiveRestartIndex(restartIndex);
-        
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        
-        
+
         initialized = true;
-        
+
         LOG.info("RenderManager init exited");
     }
-    
+
     public int getWindowWidth() {
         return window.getWidth();
     }
@@ -146,21 +123,20 @@ public class RenderManager implements Runnable {
     public int getWindowHeight() {
         return window.getHeight();
     }
-    
+
     @Override
     public void run() {
-        
+
         LOG.info(Game.threadMarker, "Render");
         LOG.info("RenderManager run");
-        
-        
+
         //the window must already be initialized
         //bind the opengl context of the window to the current thread
         window.bindGLContext();
-        
+
         initialize();
-        
-        while(!toRelase) {
+
+        while (!toRelase) {
             render();
             window.swapBuffers();
             try {
@@ -169,45 +145,42 @@ public class RenderManager implements Runnable {
                 LOG.error("{}", ex);
             }
         }
-        
+
         released = true;
 
     }
-    
+
     public boolean isInitialized() {
         return initialized;
     }
 
     public void render() {
-        prepareTextures();
-        updateViewMat();
-        updateUniformBuffers();
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-        Renderable renderableToAdd;
-        while ((renderableToAdd = toAdd.poll()) != null) {
-            RenderManager.this.initialize(renderableToAdd);
+        
+        prepareTextures();
+
+        layers.sort();
+        Iterator<RenderLayer> layerIterator = layers.iterator();
+        while (layerIterator.hasNext()) {
+            RenderLayer layer = layerIterator.next();
+            Iterator<View> viewIterator = views.iterator();
+            while (viewIterator.hasNext()) {
+                View view = viewIterator.next();
+
+                if (view.supportsLayer(layer)) {
+                    view.refresh(layer);
+                    layer.render(view);
+                }
+            }
         }
 
-        int i = 0;
-        while (i < renderables.size()) {
-            Renderable r = renderables.get(i);
-            //destroyed renderables are removed
-            if (r.isDestroyed()) {
-                remove(i);
-            } else if (r.isEnabled()) {
-                r.render();
-            }
-                i++;
-        }
-        
     }
-    
+
     public void release() {
         LOG.info("RenderManager release entered");
         toRelase = true;
-        while(!released) {
+        while (!released) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
@@ -215,35 +188,6 @@ public class RenderManager implements Runnable {
             }
         }
         LOG.info("RenderManager release exited");
-    }
-
-    public void add(Renderable r) {
-        toAdd.add(r);
-    }
-
-    private void initialize(Renderable r) {
-        r.internalInit();
-
-        int i = 0;
-        int z = r.getZIndex();
-        while (i < renderables.size() && zIndices.get(i) < z) {
-            i++;
-        }
-        renderables.add(i, r);
-        zIndices.add(i, z);
-    }
-
-    public void remove(Renderable r) {
-        toAdd.remove(r);
-        int i = renderables.indexOf(r);
-        remove(i);
-    }
-
-    private void remove(int index) {
-        if (index < renderables.size() && index >= 0) {
-            renderables.remove(index);
-            zIndices.remove(index);
-        }
     }
 
     public String queueTexture(String name, TextureData tr) {
@@ -277,22 +221,23 @@ public class RenderManager implements Runnable {
 
     //must be called in a thread with opengl context
     public void useShaderProgram(ShaderProgram sp) {
-        if(shaderProgram != sp) {
+        if (shaderProgram != sp) {
             shaderProgram = sp;
             glUseProgram(sp.getProgram());
         }
         sp.update();
     }
+
     //must be called in a thread with opengl context
-    public void useVAO(VertexArrayObject vao) {
-        if(this.vao != vao) {
-            this.vao=vao;
+    public void useVAO(VAO vao) {
+        if (this.vao != vao) {
+            this.vao = vao;
             glBindVertexArray(vao.getHandle());
         }
     }
-    
+
     //must be called in a thread with opengl context
-    public void useAndUpdateVAO(VertexArrayObject vao) {
+    public void useAndUpdateVAO(VAO vao) {
         useVAO(vao);
         vao.update();
     }
@@ -318,70 +263,10 @@ public class RenderManager implements Runnable {
         return textureHandles.getOrDefault(name, 0);
     }
 
-    public void updateViewMat() {
-        projectionMatrix.mul(vp.getViewMatrix(), projectionViewMatrix);
-    }
-
-    public void setOrthographicProjection(float width, float height, float near, float far) {
-        projectionMatrix.set(2 / width, 0, 0, 0,
-                0, 2 / height, 0, 0,
-                0, 0, -2 / (far - near), (far + near) / (far - near),
-                0, 0, 0, 1);
-        projectionMatrix.transpose();
-    }
-
-    public void setPespectiveProjection(float fovx, float aspect, float znear, float zfar) {
-        projectionMatrix.setPerspective(fovx / aspect, aspect, znear, zfar);
-    }
-
-    public Matrix4f getProjectionMatrix() {
-        return projectionMatrix;
-    }
-
-    public ViewPoint getViewPoint() {
-
-        return vp;
-    }
-
-    public Matrix4f getProjectionViewMatrix() {
-        return projectionViewMatrix;
-    }
-
-    public Matrix4f getViewMatrix() {
-        return vp.getViewMatrix();
-    }
-
-    public GLBuffer getUniformBuffer(String name) {
-        return uniformBuffers.get(name);
-    }
-
-    private void updateUniformBuffers() {
-        Iterator<GLBuffer> iter = uniformBuffers.values().iterator();
-        while(iter.hasNext()) {
-            GLBuffer buf = iter.next();
-            buf.updateBuffer();
-        }
-    }
-    
-    public void addUniformBuffer(String name, GLBuffer buf) {
-        uniformBuffers.put(name, buf);
-    }
-    
-    public GLBuffer createUniformBuffer(String name, ByteBuffer data, boolean dynamic) {
-        if (!uniformBuffers.containsKey(name)) {
-            GLBuffer buf = new GLBuffer(GL31.GL_UNIFORM_BUFFER, dynamic ? GL15.GL_DYNAMIC_DRAW : GL15.GL_STATIC_DRAW, data, this);
-            addUniformBuffer(name, buf);
-            return buf;
-        } else {
-            LOG.warn("Attempted to create a UniformBuffer with a preexisting name: {}", name);
-            return uniformBuffers.get(name);
-        }
-    }
-    
     public Window getWindow() {
         return window;
     }
-    
+
     public int getRestartIndex() {
         return restartIndex;
     }
@@ -401,6 +286,5 @@ public class RenderManager implements Runnable {
                 return GL_FLOAT;
         }
     }
-
 
 }

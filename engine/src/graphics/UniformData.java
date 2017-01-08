@@ -1,6 +1,6 @@
 package graphics;
 
-import geometry.Material;
+import graphics.visual.Material;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -38,10 +38,6 @@ public class UniformData {
     //uniforms that have changed value since the last upload
     private Queue<Integer> uniformChanged;
 
-    //the list of names of uniformBlocks used by this shader
-    //uniform blocks must be added through the RenderManager as buffers
-    private List<String> uniformBlocks;
-
     //the current set of texture units and the name of textures bound to them
     private Map<Integer, String> textureMap;
     
@@ -63,8 +59,6 @@ public class UniformData {
         uniformIndices = new HashMap<>();
         uniformNew = new ConcurrentLinkedQueue<>();
         uniformChanged = new ConcurrentLinkedQueue<>();
-
-        uniformBlocks = new ArrayList<>();
 
         textureMap = new HashMap<>();
         
@@ -245,11 +239,8 @@ public class UniformData {
         m.get(data.asFloatBuffer());
     }
 
-    public void setUniformBuffer(String blockName, String bufferName) {
-        if (!uniformBlocks.contains(blockName)) {
-            uniformBlocks.add(blockName);
-            owner.addUniformBlock(blockName, bufferName);
-        }
+    public void setUniformBuffer(String blockName, GLBuffer buffer) {
+            owner.setUniformBlock(blockName, buffer);
     }
 
     public void setTexture(String samplerName, String textureName) {

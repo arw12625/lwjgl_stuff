@@ -8,7 +8,11 @@ package update;
  */
 public interface Updateable {
     
-    public void update(int delta);
-    public default boolean isDestroyed() {return false;}
-    public default boolean isEnabled() {return true;}
+    public default void updateInit(){}
+    public void update(int delta, UpdateLayer layer);
+    public default void updateRelease(){}
+    
+    public default boolean isUpdatePendingRelease() {return false;}
+    public default boolean isUpdateReleased() {return false;}
+    public default boolean isUpdateEnabled() {return true;}
 }

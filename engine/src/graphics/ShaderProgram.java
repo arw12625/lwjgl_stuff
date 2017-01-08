@@ -54,17 +54,17 @@ public class ShaderProgram {
     private UniformData uniformData;
 
     private Map<String, Integer> blockLocations;    //map from block name to location
-    private Map<String, String> bufferNames;        //map from block name to buffer name
-    private Queue<String> blockNamesNew;            //a list of unitialized blocks
+    private Map<String, GLBuffer> uniformBuffers;        //map from block name to buffer name
+    private Queue<String> blockNamesChanged;            //a list of unitialized blocks
 
     private Map<String, Integer> samplerMap;
     private int texUnitUsed;
 
     private Map<String, Integer> attributeLocations;
     private int nextAttribLoc;
-    
+
     private RenderManager renderManager;
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(ShaderProgram.class);
 
     public ShaderProgram(String vertexText, String fragmentText, RenderManager renderManager) {
@@ -75,8 +75,8 @@ public class ShaderProgram {
         uniformLocations = new HashMap<>();
 
         blockLocations = new HashMap<>();
-        bufferNames = new HashMap<>();
-        blockNamesNew = new ConcurrentLinkedQueue<>();
+        uniformBuffers = new HashMap<>();
+        blockNamesChanged = new ConcurrentLinkedQueue<>();
 
         samplerMap = new HashMap<>();
         texUnitUsed = 0;
@@ -97,28 +97,30 @@ public class ShaderProgram {
     public static ShaderProgram loadProgram(String vertexPath, String fragmentPath, StandardGame game) {
         return loadProgram(vertexPath, fragmentPath, game.getRenderManager(), game.getResourceManager());
     }
+
     public static ShaderProgram loadProgram(String vertexPath, String fragmentPath, RenderManager renderManager, ResourceManager resourceManager) {
         String vertexResource = TextData.loadText(vertexPath, resourceManager);
         String fragmentResource = TextData.loadText(fragmentPath, resourceManager);
         ShaderProgram sp = new ShaderProgram(vertexResource, fragmentResource, renderManager);
         return sp;
     }
-    
+
     public RenderManager getRenderManager() {
         return renderManager;
     }
-    
+
     public void useShaderProgram() {
         renderManager.useShaderProgram(this);
     }
 
     public int createShader() {
-        if(!created) {
-            this.program =  glCreateProgram();
+        if (!created) {
+            this.program = glCreateProgram();
             created = true;
         }
         return this.program;
     }
+
     public int compileShader() {
         if (!compiled) {
             this.compiled = true;
@@ -153,13 +155,13 @@ public class ShaderProgram {
         }
         return getProgram();
     }
-    
+
     public int createAndCompileShader() {
         createShader();
         compileShader();
         return this.program;
     }
-    
+
     protected int getAttributeLocation(String name) {
         Integer location = attributeLocations.get(name);
         if (location == null) {
@@ -168,7 +170,7 @@ public class ShaderProgram {
                 bindAttributeLocation(name, location);
             } else {
                 location = GL20.glGetAttribLocation(program, name);
-                if(location == -1) {
+                if (location == -1) {
                     LOG.error("Attribute not defined in shader: " + name);
                 } else {
                     addAttributeEntry(name, location);
@@ -182,29 +184,28 @@ public class ShaderProgram {
         GL20.glBindAttribLocation(program, loc, name);
         addAttributeEntry(name, loc);
     }
-    
+
     private void addAttributeEntry(String name, int location) {
         attributeLocations.put(name, location);
         nextAttribLoc = Math.max(location + 1, nextAttribLoc);
     }
-    
+
     private int nextAttribLocation() {
         return nextAttribLoc;
 
     }
-    
+
     public void setAttributeDataLocations(AttributeData a) {
-        for(Entry<String, Integer> e : attributeLocations.entrySet()) {
+        for (Entry<String, Integer> e : attributeLocations.entrySet()) {
             a.setAttributeLocation(e.getKey(), e.getValue());
         }
     }
-    
 
     protected int getUniformLocation(String name) {
         Integer loc = uniformLocations.get(name);
         if (loc == null) {
             loc = GL20.glGetUniformLocation(getProgram(), name);
-            if(loc == -1) {
+            if (loc == -1) {
                 LOG.warn("Uniform not found: " + name);
             }
             uniformLocations.put(name, loc);
@@ -216,21 +217,34 @@ public class ShaderProgram {
         if (uniformData != null) {
             uniformData.updateUniforms();
         }
+        updateUniformBuffers();
+
+    }
+
+    private void updateUniformBuffers() {
+
         String blockName;
-        while ((blockName = blockNamesNew.poll()) != null) {
-            String bufferName = bufferNames.get(blockName);
-            int bufferLocation = renderManager.getUniformBuffer(bufferName).getHandle();
-            int blockLocation = GL31.glGetUniformBlockIndex(program, blockName);
-            blockLocations.put(blockName, blockLocation);
+        while ((blockName = blockNamesChanged.poll()) != null) {
+            if (blockLocations.get(blockName) == null) {
+                int blockLocation = GL31.glGetUniformBlockIndex(program, blockName);
+                blockLocations.put(blockName, blockLocation);
+            }
+            GLBuffer buf = uniformBuffers.get(blockName);
+            int bufferLocation = buf.getHandle();
+            int blockLocation = blockLocations.get(blockName);
             glBindBufferBase(GL_UNIFORM_BUFFER, 2, bufferLocation);
             GL31.glUniformBlockBinding(program, blockLocation, 2);
         }
+
     }
 
-    protected void addUniformBlock(String blockName, String bufferName) {
-        if (!bufferNames.containsKey(blockName)) {
-            bufferNames.put(blockName, bufferName);
-            blockNamesNew.add(blockName);
+    protected void setUniformBlock(String blockName, GLBuffer buffer) {
+        GLBuffer existing = uniformBuffers.get(blockName);
+        if (existing != buffer) {
+            uniformBuffers.put(blockName, buffer);
+            if (!blockNamesChanged.contains(blockName)) {
+                blockNamesChanged.add(blockName);
+            }
         }
     }
 

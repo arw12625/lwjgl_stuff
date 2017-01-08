@@ -1,3 +1,6 @@
+
+//this script no longer works
+
 LOG.info("EH?");
 print("Game.js Start");
 

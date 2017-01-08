@@ -2,14 +2,18 @@ package graphics.visual;
 
 import game.Component;
 import game.StandardGame;
-import geometry.Material;
 import geometry.Transform;
+import graphics.RenderLayer;
 import graphics.RenderManager;
-import graphics.Renderable;
+import graphics.util.RenderableAdapter;
 import graphics.ShaderProgram;
+import graphics.UniformBuffer;
 import graphics.UniformData;
 import graphics.UniformTransform;
-import graphics.VertexArrayObject;
+import graphics.VAO;
+import graphics.View;
+import graphics.util.Camera;
+import graphics.util.GraphicsUtility;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -45,15 +49,18 @@ import resource.TextureData;
  * meshes rendered using indexed data
  *
  */
-public class JSONRenderer extends Renderable {
+public class JSONRenderer extends RenderableAdapter {
 
     private JSONData model;
     private Map<String, Material> materials;
     private List<Mesh> meshes;
     private List<ShaderProgram> shaders;
+    private UniformBuffer lighting;
 
-    public JSONRenderer(Component parent, JSONData model, RenderManager renderManager, ResourceManager resourceManager) {
-        super(parent);
+    public JSONRenderer(JSONData model,
+            RenderManager renderManager, ResourceManager resourceManager,
+            UniformBuffer lighting) {
+        this.lighting =lighting;
         this.model = model;
         materials = new HashMap<>();
         meshes = new ArrayList<>();
@@ -78,21 +85,21 @@ public class JSONRenderer extends Renderable {
         }
         JSONArray jsonMeshes = model.getJSON().getJSONArray("meshes");
         
-        Transform t = new Transform(parent);
+        Transform t = new Transform();
         for (int i = 0; i < jsonMeshes.length(); i++) {
             JSONObject obj = jsonMeshes.getJSONObject(i);
             ShaderProgram sp = shaders.get(obj.getInt("shader"));
             Mesh m = new Mesh(sp, obj, model);
             UniformTransform ut = new UniformTransform(t, JSONData.parseMat(obj.getString("transform")));
+            m.ut = ut;
             m.getUniforms().addStruct(ut);
-            m.getUniforms().setUniformBuffer("lightBlock", "lightBlock");
             meshes.add(m);
         }
         
     }
 
     @Override
-    public void initRender() {
+    public void renderInit() {
         
         for (ShaderProgram sp : shaders) {
             sp.createAndCompileShader();
@@ -131,14 +138,20 @@ public class JSONRenderer extends Renderable {
             }
             
         }
+        
+        setRenderInitialized();
 
     }
 
     @Override
-    public void render() {
+    public void render(View view, RenderLayer layer) {
+        Camera c = GraphicsUtility.getHackyCamera(view);
         
         for (Mesh m : meshes) {
             m.vao.useAndUpdateVAO();
+            m.ut.setCamera(c);
+            m.getUniforms().setUniformBuffer("lightBlock", lighting.getGLBuffer(view));
+            
             m.sp.setUniformData(m.uniforms);
             m.sp.useShaderProgram();
             //for now only tris are considered
@@ -155,17 +168,17 @@ public class JSONRenderer extends Renderable {
         return meshes;
     }
 
-    public static JSONRenderer createJSONRenderer(Component parent, String path, StandardGame game) {
-        return createJSONRenderer(parent, path, game.getRenderManager(), game.getResourceManager());
+    public static JSONRenderer createJSONRenderer(String path, StandardGame game, UniformBuffer lighting) {
+        return createJSONRenderer(path, game.getRenderManager(), game.getResourceManager(), lighting);
     }
     
     
-    public static JSONRenderer createJSONRenderer(Component parent, String path,
-            RenderManager renderManager, ResourceManager resourceManager) {
+    public static JSONRenderer createJSONRenderer(String path,
+            RenderManager renderManager, ResourceManager resourceManager,
+            UniformBuffer lighting) {
         JSONData jsonData = JSONData.loadJSONData(path, resourceManager);
-        JSONRenderer r = new JSONRenderer(parent, jsonData,
-        renderManager, resourceManager);
-        renderManager.add(r);
+        JSONRenderer r = new JSONRenderer(jsonData,
+        renderManager, resourceManager, lighting);
         return r;
     }
 
@@ -178,7 +191,7 @@ public class JSONRenderer extends Renderable {
 
         ShaderProgram sp;
         UniformData uniforms;
-        VertexArrayObject vao;
+        VAO vao;
         int vertexHandle;
         int faceHandle;
         List<Integer> attributeLocations;
@@ -186,6 +199,7 @@ public class JSONRenderer extends Renderable {
         JSONData parent;
         int numberFaces;
         Material mat;
+        UniformTransform ut;
 
         Mesh(ShaderProgram sp, JSONObject json, JSONData parent) {
             this.sp = sp;
@@ -193,7 +207,7 @@ public class JSONRenderer extends Renderable {
             this.json = json;
             attributeLocations = new ArrayList<>();
             this.parent = parent;
-            vao = new VertexArrayObject(sp.getRenderManager());
+            vao = new VAO(sp.getRenderManager());
         }
 
         public UniformData getUniforms() {

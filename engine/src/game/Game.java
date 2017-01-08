@@ -8,7 +8,7 @@ import org.slf4j.MarkerFactory;
  *
  * @author Andrew_2
  */
-public abstract class Game extends Component implements Runnable {
+public abstract class Game implements Runnable {
 
     GameStateManager stateManager;
     
@@ -16,7 +16,6 @@ public abstract class Game extends Component implements Runnable {
     public static final Marker threadMarker = MarkerFactory.getMarker("thread");
     
     public Game(GameStateManager stateManager) {
-        super(null);
         LOG.info("Game constructor entered");
         this.stateManager = stateManager;
         stateManager.pushState(new EngineConstruct());

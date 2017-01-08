@@ -1,11 +1,12 @@
 package graphics.particle;
 
-import game.Component;
-import graphics.RenderManager;
-import graphics.Renderable;
-import graphics.VAORender;
+import graphics.RenderLayer;
+import graphics.VAOAttributes;
+import graphics.View;
+import graphics.util.RenderableUpdateableAdapter;
 import java.util.ArrayList;
 import java.util.List;
+import update.UpdateLayer;
 
 /**
  *
@@ -15,17 +16,16 @@ import java.util.List;
  * ParticleEmitters in a single ParticleEngine must use the same VAO.
  *
  */
-public class ParticleEngine extends Renderable implements update.Updateable {
+public class ParticleEngine extends RenderableUpdateableAdapter {
 
     String name;
     List<ParticleEmitter> instances;
-    VAORender vao;
+    VAOAttributes vao;
 
     int offset;
 
-    public ParticleEngine(Component parent, String name, VAORender vao) {
+    public ParticleEngine(String name, VAOAttributes vao) {
 
-        super(parent);
         this.name = name;
         this.vao = vao;
 
@@ -34,24 +34,19 @@ public class ParticleEngine extends Renderable implements update.Updateable {
     }
 
     @Override
-    public int getZIndex() {
-        return RenderManager.PRE_RENDER_Z_INDEX;
-    }
-
-    @Override
-    public void initRender() {
+    public void renderInit() {
 
         vao.generateVAO();
 
     }
 
     @Override
-    public void render() {
+    public void render(View view, RenderLayer layer) {
         vao.useAndUpdateVAO();
 
     }
 
-    public VAORender getVAO() {
+    public VAOAttributes getVAO() {
         return vao;
     }
 
@@ -66,7 +61,7 @@ public class ParticleEngine extends Renderable implements update.Updateable {
     }
 
     @Override
-    public void update(int delta) {
+    public void update(int delta, UpdateLayer layer) {
 
         for (ParticleEmitter pe : instances) {
             pe.update(delta);

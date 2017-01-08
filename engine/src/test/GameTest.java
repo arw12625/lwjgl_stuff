@@ -3,7 +3,7 @@ package test;
 import game.Game;
 import game.GameObject;
 import game.StandardGame;
-import graphics.visual.JSONRenderer;
+import graphics.RenderLayer;
 import graphics.visual.SkyBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,11 +56,7 @@ public class GameTest implements Runnable {
         ScriptManager scriptManager = game.getScriptManager();
         
         
-        GameObject scene = new GameObject(game);
-        GameScript load = scriptManager.loadScript(scene, "game_scripts/loading.js");
-        GameScript print = scriptManager.loadScript(scene, "game_scripts/print_test.js");
-        
-        SkyBox.createSkyBox(game);
+        GameScript test = scriptManager.loadScript("game_scripts/test.js");
         
         LOG.info("GameTest scripts added");
         

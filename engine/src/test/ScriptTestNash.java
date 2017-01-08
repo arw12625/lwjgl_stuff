@@ -15,6 +15,11 @@ public class ScriptTestNash {
 
     public static void main(String[] args) throws Exception {
 
+        Integer a = 1;
+        Integer b = 2;
+        System.out.println(a.compareTo(b));
+        
+        
         ScriptEngineManager manager = new ScriptEngineManager();
         ScriptEngine engine = manager.getEngineByName("JavaScript");
         Invocable inv = (Invocable)engine;

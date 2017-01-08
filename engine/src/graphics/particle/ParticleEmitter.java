@@ -3,12 +3,16 @@ package graphics.particle;
 import game.Component;
 import geometry.Transform;
 import graphics.AttributeData;
+import graphics.RenderLayer;
 import graphics.RenderManager;
 import graphics.Renderable;
+import graphics.util.RenderableAdapter;
 import graphics.ShaderProgram;
 import graphics.UniformData;
 import graphics.UniformTransform;
-import graphics.VAORender;
+import graphics.VAOAttributes;
+import graphics.View;
+import graphics.util.GraphicsUtility;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -19,12 +23,12 @@ import util.BufferableHelper;
  * @author Andrew_2
  * @param <T>
  */
-public abstract class ParticleEmitter<T extends Particle> extends Renderable {
+public abstract class ParticleEmitter<T extends Particle> extends RenderableAdapter {
 
     List<T> particles;
     BufferableHelper particleBuffer;
     
-    VAORender vao;
+    VAOAttributes vao;
     ShaderProgram shaderProgram;
     AttributeData dynamic;
     
@@ -38,9 +42,8 @@ public abstract class ParticleEmitter<T extends Particle> extends Renderable {
     int pHandle;
     int vHandle;
     
-    public ParticleEmitter(Component parent, String name, 
+    public ParticleEmitter(String name, 
             ShaderProgram sp, int capacity, Transform t) {
-        super(parent);
         this.name = name;
         this.capacity = capacity;
         this.shaderProgram = sp;
@@ -54,7 +57,7 @@ public abstract class ParticleEmitter<T extends Particle> extends Renderable {
     }
     
     
-    public void init(VAORender vao, int offset) {
+    public void init(VAOAttributes vao, int offset) {
         
         this.vao = vao;
         this.offset = offset;
@@ -99,15 +102,16 @@ public abstract class ParticleEmitter<T extends Particle> extends Renderable {
     
     
     @Override
-    public void render() {
-        shaderProgram.getRenderManager().useAndUpdateVAO(vao);
+    public void render(View view, RenderLayer layer) {
+        vao.useVAO();
+        ut.setCamera(GraphicsUtility.getHackyCamera(view));
         shaderProgram.setUniformData(ud);
         shaderProgram.useShaderProgram();
     
     }
     
     @Override
-    public void initRender() {
+    public void renderInit() {
 
         shaderProgram.createAndCompileShader();
         

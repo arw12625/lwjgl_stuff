@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import update.UpdateLayer;
 import update.Updateable;
 
 /**
@@ -15,7 +16,7 @@ import update.Updateable;
  * all updates added in the script are gathered in a list to be run as one
  * 
  */
-public class GameScript extends Component implements Updateable {
+public class GameScript implements Updateable {
 
     private final String name;
     private final String script;
@@ -23,8 +24,7 @@ public class GameScript extends Component implements Updateable {
     private Map<Class, Object> interfaces;
     private List<Updateable> updates;
     
-    protected GameScript(Component parent, String name, String script) {
-        super(parent);
+    protected GameScript(String name, String script) {
         this.name = name;
         this.script = script;
         interfaces = new HashMap<>();
@@ -55,11 +55,11 @@ public class GameScript extends Component implements Updateable {
     public void addUpdate(Updateable u) {
         updates.add(u);
     }
-
+    
     @Override
-    public void update(int delta) {
-        for(Updateable u : updates) {
-            u.update(delta);
+    public void update(int delta, UpdateLayer layer) {
+    for(Updateable u : updates) {
+            u.update(delta, layer);
         }
     }
     

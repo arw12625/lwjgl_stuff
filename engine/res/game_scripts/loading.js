@@ -1,3 +1,4 @@
+//this script no longer works
 
 var fps = scriptManager.loadScript(obj, "game_scripts/fps_display.js");
 var movement = scriptManager.loadScript(obj, "game_scripts/viewpoint.js");

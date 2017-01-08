@@ -8,9 +8,8 @@ import update.Updateable;
  * 
  * A class to represent the human player in the engine
  */
-public abstract class Player extends Component implements Updateable {
+public abstract class Player implements Updateable {
 
-    public Player(Component parent) {
-        super(parent);
+    public Player() {
     }
 }

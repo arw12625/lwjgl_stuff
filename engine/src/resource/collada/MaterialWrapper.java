@@ -1,6 +1,6 @@
 package resource.collada;
 
-import geometry.Material;
+import graphics.visual.Material;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

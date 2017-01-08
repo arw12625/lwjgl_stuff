@@ -5,12 +5,17 @@ import game.StandardGame;
 import geometry.Transform;
 import graphics.AttributeData;
 import graphics.GLType;
+import graphics.RenderLayer;
 import graphics.RenderManager;
 import graphics.Renderable;
 import graphics.ShaderProgram;
+import graphics.UniformBuffer;
 import graphics.UniformData;
 import graphics.UniformTransform;
-import graphics.VAORender;
+import graphics.VAOAttributes;
+import graphics.View;
+import graphics.util.GraphicsUtility;
+import graphics.util.RenderableAdapter;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -26,7 +31,7 @@ import resource.ResourceManager;
  *
  * @author Andrew_2
  */
-public class HeightMap extends Renderable {
+public class HeightMap extends RenderableAdapter {
 
     private int resx, resz, vertCount, indexCount;
     private float width, depth;
@@ -35,20 +40,21 @@ public class HeightMap extends Renderable {
     private ByteBuffer indexData;
     private ByteBuffer dynamicData;
     
-    VAORender vao;
+    VAOAttributes vao;
     AttributeData staticAttr;
     AttributeData dynamicAttr;
 
     ShaderProgram shaderProgram;
     UniformData ud;
+    UniformBuffer lighting;
+    UniformTransform ut;
     Transform t;
 
     private static final int dynamicFloats = 4;
     private static final int heightOffset = 0;
     private static final int normalOffset = 1;
     
-    public HeightMap(Component parent, float[][] heights, float width, float depth, Transform t, ShaderProgram shaderProgram) {
-        super(parent);
+    public HeightMap(float[][] heights, float width, float depth, Transform t, ShaderProgram shaderProgram, UniformBuffer lighting) {
         this.heights = heights;
         this.resx = heights[0].length;
         this.resz = heights.length;
@@ -57,6 +63,7 @@ public class HeightMap extends Renderable {
 
         this.width = width;
         this.depth = depth;
+        this.lighting = lighting;
 
         coordData = BufferUtils.createByteBuffer(vertCount * 2 * Float.BYTES);
         indexData = BufferUtils.createByteBuffer(indexCount * Integer.BYTES);
@@ -86,7 +93,7 @@ public class HeightMap extends Renderable {
         }
         intView.rewind();
         
-        vao = new VAORender(shaderProgram.getRenderManager());
+        vao = new VAOAttributes(shaderProgram.getRenderManager());
         staticAttr = AttributeData.createAttributeData(vao, "static", GL15.GL_STATIC_DRAW);
         staticAttr.createAttribute("position", GLType.GL_2fv, 0, 8);
         staticAttr.setData(coordData);
@@ -108,25 +115,26 @@ public class HeightMap extends Renderable {
         
         ud = new UniformData(shaderProgram);
         shaderProgram.setUniformData(ud);
-        UniformTransform ut = new UniformTransform(t, initTrans);
+        ut = new UniformTransform(t, initTrans);
         ud.addStruct(ut);
-        ud.setUniformBuffer("lightBlock", "lightBlock");
 
     }
 
     @Override
-    public void initRender() {
+    public void renderInit() {
         shaderProgram.createAndCompileShader();
 
         vao.generateVAO();
         vao.setShaderAttributeLocations(shaderProgram);
+        
+        setRenderInitialized();
     }
     
     @Override
-    public void render() {
+    public void render(View view, RenderLayer layer) {
         vao.useAndUpdateVAO();
-        
-        //dynamicAttr.setChanged();
+        ut.setCamera(GraphicsUtility.getHackyCamera(view));
+        ud.setUniformBuffer("lightBlock", lighting.getGLBuffer(view));
 
         shaderProgram.useShaderProgram();
 
@@ -244,18 +252,17 @@ public class HeightMap extends Renderable {
         
     }
     
-    public static HeightMap createHeightMap(Component parent, int resx, int resz, float width, float depth,
-            StandardGame game) {
+    public static HeightMap createHeightMap(int resx, int resz, float width, float depth,
+            StandardGame game, UniformBuffer lighting) {
         
-        return createHeightMap(parent, resx, resz, width, depth, game.getRenderManager(), game.getResourceManager());
+        return createHeightMap(resx, resz, width, depth, game.getRenderManager(), game.getResourceManager(), lighting);
     }
-    public static HeightMap createHeightMap(Component parent, int resx, int resz, float width, float depth,
-            RenderManager renderManager, ResourceManager resourceManager) {
+    public static HeightMap createHeightMap(int resx, int resz, float width, float depth,
+            RenderManager renderManager, ResourceManager resourceManager, UniformBuffer lighting) {
         ShaderProgram sp = ShaderProgram.loadProgram("shaders/heightmap.vs", "shaders/heightmap.fs",
                 renderManager, resourceManager);
         float[][] heights = createWaveHeights(resx, resz);
-        HeightMap hm = new HeightMap(parent, heights, width, depth, new Transform(parent), sp);
-        renderManager.add(hm);
+        HeightMap hm = new HeightMap(heights, width, depth, new Transform(), sp, lighting);
         return hm;
     }
     

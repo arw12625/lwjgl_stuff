@@ -141,10 +141,10 @@ public class Window {
             @Override
             public void invoke(long window, int button, int action, int mods) {
                 for (MouseButtonCallback mbcb : mouseButtonCallbacks) {
-                    if (mbcb.isDestroyed()) {
+                    if (mbcb.isMouseButtonCallbackPendingRelease()) {
                         mouseButtonCallbacks.remove(mbcb);
-                    } else if (mbcb.isEnabled()) {
-                        mbcb.invoke(window, button, action, mods);
+                    } else if (mbcb.isMouseButtonCallbackEnabled()) {
+                        mbcb.invokeMouseButton(window, button, action, mods);
                     }
                 }
             }
@@ -164,10 +164,10 @@ public class Window {
             public void invoke(long window, int key, int scancode, int action, int mods) {
 
                 for (KeyCallback kcb : keyCallbacks) {
-                    if (kcb.isDestroyed()) {
+                    if (kcb.isKeyCallbackPendingRelease()) {
                         keyCallbacks.remove(kcb);
-                    } else if (kcb.isEnabled()) {
-                        kcb.invoke(window, key, scancode, action, mods);
+                    } else if (kcb.isKeyCallbackEnabled()) {
+                        kcb.invokeKey(window, key, scancode, action, mods);
                     }
                 }
 
@@ -175,7 +175,7 @@ public class Window {
         };
         glfwSetKeyCallback(handle, glfwKeyCallback);
 
-        defaultTextInput = new TextInput(null);
+        defaultTextInput = new TextInput();
         addKeyCallback(defaultTextInput);
     }
 

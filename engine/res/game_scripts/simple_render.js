@@ -1,3 +1,5 @@
+//this script no longer works
+
 var renderer = obj.getComponent("JSONRenderer");
 var trans = obj.getComponent("Transform");
 

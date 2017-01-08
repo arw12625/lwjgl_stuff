@@ -12,7 +12,6 @@ import static org.lwjgl.opengl.GL15.glGenBuffers;
  */
 public class GLBuffer {
 
-    private RenderManager renderManager;
     private ByteBuffer data;
     private int handle;
     private int target, usage;
@@ -20,16 +19,15 @@ public class GLBuffer {
     private boolean changed, created;
     private boolean toRelease;
 
-    public GLBuffer(int target, int usage, ByteBuffer data, RenderManager renderManager) {
+    public GLBuffer(int target, int usage, ByteBuffer data) {
         this.target = target;
         this.usage = usage;
         this.data = data;
-        this.renderManager = renderManager;
         handle = -1;
     }
 
-    public GLBuffer(int target, int usage, RenderManager renderManager) {
-        this(target, usage, null, renderManager);
+    public GLBuffer(int target, int usage) {
+        this(target, usage, null);
     }
 
     public void setData(ByteBuffer data) {

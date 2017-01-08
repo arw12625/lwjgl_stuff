@@ -1,13 +1,14 @@
 package graphics.ui;
 
-import game.Component;
 import graphics.AttributeData;
 import graphics.GLType;
+import graphics.RenderLayer;
 import graphics.RenderManager;
-import graphics.Renderable;
+import graphics.util.RenderableAdapter;
 import graphics.ShaderProgram;
 import graphics.UniformData;
-import graphics.VAORender;
+import graphics.VAOAttributes;
+import graphics.View;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,13 +28,13 @@ import resource.TextureData;
  * array object
  *
  */
-public class FlatTexture extends Renderable {
+public class FlatTexture extends RenderableAdapter {
 
     private List<String> textures;
     private List<Boolean> enabled;
 
     private int capacity;
-    private VAORender vao;
+    private VAOAttributes vao;
     private AttributeData attr;
     private ShaderProgram sp;
     private UniformData ud;
@@ -72,17 +73,16 @@ public class FlatTexture extends Renderable {
             + "}";
 
     public FlatTexture(ShaderProgram shaderProgram) {
-        this(null, MAX_NUMBER, shaderProgram);
+        this(MAX_NUMBER, shaderProgram);
     }
 
-    public FlatTexture(Component parent, int capacity, ShaderProgram shaderProgram) {
-        super(parent);
+    public FlatTexture(int capacity, ShaderProgram shaderProgram) {
         this.capacity = capacity;
         textures = new ArrayList<>();
         enabled = new ArrayList<>();
         buffer = BufferUtils.createByteBuffer(this.capacity * NUM_BYTES);
 
-        vao = new VAORender(shaderProgram.getRenderManager());
+        vao = new VAOAttributes(shaderProgram.getRenderManager());
         attr = AttributeData.createAttributeData(vao, "texture", GL_DYNAMIC_DRAW);
         attr.setData(buffer);
         attr.createAttribute("vertex_position", GLType.GL_2fv, 0, 16);
@@ -95,9 +95,9 @@ public class FlatTexture extends Renderable {
         numTex = 0;
     }
 
-    public static FlatTexture createFlatTexture(Component parent, int capacity, RenderManager renderManager) {
+    public static FlatTexture createFlatTexture(int capacity, RenderManager renderManager) {
         ShaderProgram defaultShader = new ShaderProgram(defaultVertexShader, defaultFragmentShader, renderManager);
-        return new FlatTexture(parent, capacity, defaultShader);
+        return new FlatTexture(capacity, defaultShader);
     }
 
     public void addTexture(String textureName) {
@@ -139,16 +139,18 @@ public class FlatTexture extends Renderable {
     }
 
     @Override
-    public void initRender() {
+    public void renderInit() {
 
         sp.createAndCompileShader();
 
         vao.generateVAO();
         vao.setShaderAttributeLocations(sp);
+        
+        setRenderInitialized();
     }
 
     @Override
-    public void render() {
+    public void render(View v, RenderLayer layer) {
         buffer.rewind();
         attr.setChanged();
         vao.useAndUpdateVAO();
@@ -165,11 +167,6 @@ public class FlatTexture extends Renderable {
                 glDrawArrays(GL_QUADS, i * 4, 4);
             }
         }
-    }
-
-    @Override
-    public int getZIndex() {
-        return 1000;
     }
 
 }

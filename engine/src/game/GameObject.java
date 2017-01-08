@@ -9,7 +9,7 @@ package game;
  */
 public final class GameObject extends Component{
 
-    public GameObject(Component parent) {
-        super(parent);
+    public GameObject() {
+        super();
     }
 }

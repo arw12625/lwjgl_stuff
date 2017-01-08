@@ -8,7 +8,14 @@ import game.Component;
  * 
  * Interface for mouse event handling
  */
-public abstract class MouseButtonCallback extends Component {
-    public MouseButtonCallback(Component parent) {super(parent);}
-    public abstract void invoke(long window, int button, int action, int mods);
+public interface MouseButtonCallback {
+    public void invokeMouseButton(long window, int button, int action, int mods);
+    
+    public default boolean isMouseButtonCallbackEnabled() {
+        return true;
+    }
+
+    public default boolean isMouseButtonCallbackPendingRelease() {
+        return false;
+    }
 }

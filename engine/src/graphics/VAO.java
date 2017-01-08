@@ -6,14 +6,14 @@ import org.lwjgl.opengl.GL30;
  *
  * @author Andrew_2
  */
-public class VertexArrayObject {
+public class VAO {
 
     private RenderManager renderManager;
     private int vaoHandle;
     private boolean created;
     private boolean toRelease;
 
-    public VertexArrayObject(RenderManager renderManager) {
+    public VAO(RenderManager renderManager) {
         this.renderManager = renderManager;
         vaoHandle = -1;
     }
