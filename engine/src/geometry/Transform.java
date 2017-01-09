@@ -72,6 +72,7 @@ public class Transform implements HasTransform {
         stale();
     }
 
+    @Override
     public Vector3f getScale() {
         return new Vector3f(scale);
     }
@@ -115,7 +116,7 @@ public class Transform implements HasTransform {
         }
     }
 
-    public Matrix4f getMatrix4f() {
+    public Matrix4f getTransformationMatrix() {
         refresh();
 
         return new Matrix4f(matrix);

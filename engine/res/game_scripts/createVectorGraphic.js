@@ -1,5 +1,5 @@
 
-function createVectorGraphic_(layer) {
+function createVectorGraphic(layer) {
     var cap = 100;
     var vg = visual.VectorGraphic.createAndAddVectorGraphic(cap, false, gameInst, layer);
 
@@ -15,5 +15,5 @@ function createVectorGraphic_(layer) {
 
 return {
     
-    createVectorGraphic : createVectorGraphic_
+    createVectorGraphic : createVectorGraphic
 };

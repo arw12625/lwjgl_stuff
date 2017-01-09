@@ -1,4 +1,4 @@
-function createJSONRenderer_(lightingBuf, layer) {
+function createJSONRenderer(lightingBuf, layer) {
 
     var mesh = visual.JSONRenderer.createJSONRenderer("misc_models/tree.json", gameInst, lightingBuf);
     layer.addRenderable(mesh, 0);
@@ -6,5 +6,5 @@ function createJSONRenderer_(lightingBuf, layer) {
 }
 
 return {
-    createJSONRenderer : createJSONRenderer_
+    createJSONRenderer : createJSONRenderer
 };

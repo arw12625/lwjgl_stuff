@@ -1,4 +1,4 @@
-function createFPSDisplay_(layer) {
+function createFPSDisplay(layer) {
     //FPS Display
     var fpsFont = ui.FontData.loadFont("fonts/arial.ttf", "fps", 24, 512, 512, new joml.Vector4f(1, 0, 1, 1), gameInst);
     var fpsDisp = ui.TextDisplay.createTextDisplay(fpsFont, 20.0, 430.0, 200.0, 200.0, 20, gameInst);
@@ -12,7 +12,7 @@ function createFPSDisplay_(layer) {
 
 return {
 
-    createFPSDisplay : createFPSDisplay_
+    createFPSDisplay : createFPSDisplay
 
 }
 ;

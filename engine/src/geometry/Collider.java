@@ -4,7 +4,7 @@ package geometry;
  *
  * @author Andrew_2
  */
-public class Collider {
+public abstract class Collider {
     
     private CollisionResponse response;
     

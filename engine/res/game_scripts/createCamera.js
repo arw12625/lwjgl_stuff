@@ -1,5 +1,5 @@
 
-function createCamera_() {
+function createCamera() {
     var fixed = false;
     var x = 0;
     var y = 0;
@@ -88,6 +88,6 @@ function createCamera_() {
 }
 
 return {
-    createCamera : createCamera_
+    createCamera : createCamera
 }
 ;

@@ -22,6 +22,7 @@ var lightingBuf = lightingScript.createUniformBuffer(lighting, layer3D);
 var heightScript = scriptManager.loadScript("game_scripts/createHeightMap.js").getScriptObject();
 var height = heightScript.createHeightMap(lightingBuf, layer3D);
 
+/*
 var meshScript = scriptManager.loadScript("game_scripts/createJSONRenderer.js").getScriptObject();
 var mesh = meshScript.createJSONRenderer(lightingBuf, layer3D);
 
@@ -32,7 +33,10 @@ var skyBoxScript = scriptManager.loadScript("game_scripts/createSkyBox.js").getS
 var sky = skyBoxScript.createSkyBox(layer3D);
 
 var soundScript = scriptManager.loadScript("game_scripts/sound_test.js");
+*/
 
+var spriteScript = scriptManager.loadScript("game_scripts/createCollisionTest.js").getScriptObject();
+var col = spriteScript.createCollisionTest(lightingBuf, layer3D);
 
 var key = new io.KeyCallback({
     invokeKey: function (window, key, scancode, action, mods) {

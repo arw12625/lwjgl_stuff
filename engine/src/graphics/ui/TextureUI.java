@@ -28,7 +28,7 @@ import resource.TextureData;
  * array object
  *
  */
-public class FlatTexture extends RenderableAdapter {
+public class TextureUI extends RenderableAdapter {
 
     private List<String> textures;
     private List<Boolean> enabled;
@@ -72,11 +72,11 @@ public class FlatTexture extends RenderableAdapter {
             + "\n"
             + "}";
 
-    public FlatTexture(ShaderProgram shaderProgram) {
+    public TextureUI(ShaderProgram shaderProgram) {
         this(MAX_NUMBER, shaderProgram);
     }
 
-    public FlatTexture(int capacity, ShaderProgram shaderProgram) {
+    public TextureUI(int capacity, ShaderProgram shaderProgram) {
         this.capacity = capacity;
         textures = new ArrayList<>();
         enabled = new ArrayList<>();
@@ -95,9 +95,9 @@ public class FlatTexture extends RenderableAdapter {
         numTex = 0;
     }
 
-    public static FlatTexture createFlatTexture(int capacity, RenderManager renderManager) {
+    public static TextureUI createFlatTexture(int capacity, RenderManager renderManager) {
         ShaderProgram defaultShader = new ShaderProgram(defaultVertexShader, defaultFragmentShader, renderManager);
-        return new FlatTexture(capacity, defaultShader);
+        return new TextureUI(capacity, defaultShader);
     }
 
     public void addTexture(String textureName) {

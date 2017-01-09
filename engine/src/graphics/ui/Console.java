@@ -29,7 +29,7 @@ public class Console implements KeyCallback {
 
     private TextDisplay textDisplay;
     private TextInput textInput;
-    private FlatTexture background;
+    private TextureUI background;
     
     private boolean isEnabled, isPendingRelease;
     
@@ -92,7 +92,7 @@ public class Console implements KeyCallback {
         renderLayer.addRenderable(textDisplay, TEXT_RENDER_INDEX);
 
         TextureData.loadTextureResource("console/console.png", renderManager, resourceManager);
-        background = FlatTexture.createFlatTexture(10, renderManager);
+        background = TextureUI.createFlatTexture(10, renderManager);
         background.addTexture("console/console.png", -1, 1, 2, 2);
         renderLayer.addRenderable(background, BACKGROUND_RENDER_INDEX);
 

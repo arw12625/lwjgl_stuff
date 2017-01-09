@@ -9,7 +9,7 @@ import graphics.RenderLayer;
 import graphics.RenderManager;
 import graphics.ShaderProgram;
 import graphics.UniformData;
-import graphics.UniformTransform;
+import graphics.util.UniformTransform;
 import graphics.VAOAttributes;
 import graphics.View;
 import graphics.util.GraphicsUtility;

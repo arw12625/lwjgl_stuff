@@ -1,7 +1,10 @@
-package graphics;
+package graphics.util;
 
+import geometry.HasTransform;
 import graphics.util.Camera;
 import geometry.Transform;
+import graphics.UniformData;
+import graphics.UniformStruct;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
@@ -13,7 +16,7 @@ public class UniformTransform implements UniformStruct {
 
     private Camera cam;
     private Matrix4f initTrans;
-    private Transform t;
+    private HasTransform t;
     private Matrix4f pMat, pvmMat, vmMat;
     private Matrix3f normalMat;
 
@@ -23,7 +26,7 @@ public class UniformTransform implements UniformStruct {
             pvmName = "proj_view_model", vmName = "view_model",
             normalName = "normal_mat";
 
-    public UniformTransform(Transform t, Matrix4f initTrans,
+    public UniformTransform(HasTransform t, Matrix4f initTrans,
             boolean initTransEnabled, boolean pMatEnabled,
             boolean pvmMatEnabled, boolean vmMatEnabled, 
             boolean normalEnabled) {
@@ -83,7 +86,7 @@ public class UniformTransform implements UniformStruct {
 
     @Override
     public void updateUniformStruct(UniformData parent) {
-        Matrix4f transMat = t.getMatrix4f();
+        Matrix4f transMat = t.getTransformationMatrix();
         if (initTransEnabled) {
             transMat.mul(initTrans);
         }

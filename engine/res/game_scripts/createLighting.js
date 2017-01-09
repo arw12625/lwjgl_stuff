@@ -1,5 +1,5 @@
 
-function createLighting_() {
+function createLighting() {
 
     var lighting = visual.Lighting.createLighting("EHHEHE", 2);
     var dir1 = new joml.Vector3f(.707, -.707, 0);
@@ -12,7 +12,7 @@ function createLighting_() {
 
 return {
   
-    createLighting : createLighting_,
+    createLighting : createLighting,
     createUniformBuffer: function(lighting, layer) {return lighting.createAndAddUniformBuffer(layer);}
     
 };

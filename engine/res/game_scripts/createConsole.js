@@ -1,4 +1,4 @@
-function createConsole_(layer) {
+function createConsole(layer) {
 
     console = ui.Console.createConsole(gameInst, layer);
 
@@ -6,5 +6,5 @@ function createConsole_(layer) {
 }
 
 return {
-    createConsole : createConsole_
+    createConsole : createConsole
 };

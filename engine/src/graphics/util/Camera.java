@@ -56,7 +56,7 @@ public class Camera implements HasTransform {
     //for now we ignore the scale of the transform
     private void refresh() {
         if(!transform.isReset()) {
-            viewMatrix.set(transform.getMatrix4f()).invert();
+            viewMatrix.set(transform.getTransformationMatrix()).invert();
             transform.reset();
             staleProjection();
         }
@@ -76,6 +76,16 @@ public class Camera implements HasTransform {
         return transform.getOrientation();
     }
 
+    @Override
+    public Vector3f getScale() {
+        return transform.getScale();
+    }
+    
+    @Override
+    public Matrix4f getTransformationMatrix() {
+        return transform.getTransformationMatrix();
+    }
+    
     public void setPosition(float x, float y, float z) {
         setPosition(new Vector3f(x, y, z));
     }

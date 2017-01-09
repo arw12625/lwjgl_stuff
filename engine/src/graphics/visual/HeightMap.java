@@ -11,7 +11,7 @@ import graphics.Renderable;
 import graphics.ShaderProgram;
 import graphics.UniformBuffer;
 import graphics.UniformData;
-import graphics.UniformTransform;
+import graphics.util.UniformTransform;
 import graphics.VAOAttributes;
 import graphics.View;
 import graphics.util.GraphicsUtility;

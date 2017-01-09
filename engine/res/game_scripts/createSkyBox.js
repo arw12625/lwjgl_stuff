@@ -1,4 +1,4 @@
-function createSkyBox_(layer) {
+function createSkyBox(layer) {
     var sky = visual.SkyBox.createSkyBox(gameInst);
     layer.addRenderable(sky, graphics.RenderLayer.BACKGROUND_INDEX);
     return sky;
@@ -6,6 +6,6 @@ function createSkyBox_(layer) {
 
 
 return {
-    createSkyBox : createSkyBox_
+    createSkyBox : createSkyBox
 
 };
