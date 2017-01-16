@@ -86,7 +86,7 @@ public class UniformTransform implements UniformStruct {
 
     @Override
     public void updateUniformStruct(UniformData parent) {
-        Matrix4f transMat = t.getTransformationMatrix();
+        Matrix4f transMat = t.getTransformationMatrix(new Matrix4f());
         if (initTransEnabled) {
             transMat.mul(initTrans);
         }

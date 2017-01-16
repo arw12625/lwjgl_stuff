@@ -183,7 +183,7 @@ public class HardCodedParticleEmitter implements Renderable {
     }
 
     private void orderParticles(Camera c) {
-        Vector3f cam = c.getPosition();
+        Vector3f cam = c.getPosition(new Vector3f());
         float[] cameraPos = {cam.x, cam.y, cam.z};
         for (int i = 0; i < currentNumber; i++) {
             distances[i] = 0;

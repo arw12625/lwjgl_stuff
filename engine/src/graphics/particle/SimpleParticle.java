@@ -25,7 +25,7 @@ public class SimpleParticle extends Particle {
     }
 
     @Override
-    public int getSize() {
+    public int getBytes() {
         return BYTE_SIZE;
     }
 }

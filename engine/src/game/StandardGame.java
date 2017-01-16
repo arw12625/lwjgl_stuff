@@ -28,8 +28,8 @@ public class StandardGame extends GLFWGame {
     
     private Thread renderThread;
     
-    public static final int DEFAULT_WINDOW_WIDTH = 640;
-    public static final int DEFAULT_WINDOW_HEIGHT = 480;
+    public static final int DEFAULT_WINDOW_WIDTH = 1200;
+    public static final int DEFAULT_WINDOW_HEIGHT = 675;
     
     private static final Logger LOG = LoggerFactory.getLogger(StandardGame.class);
 

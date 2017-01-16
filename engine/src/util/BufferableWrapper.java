@@ -14,7 +14,7 @@ public class BufferableWrapper implements Bufferable {
     }
 
     @Override
-    public int getSize() {
+    public int getBytes() {
         return buffer.capacity();
     }
 

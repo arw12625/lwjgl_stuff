@@ -6,8 +6,9 @@ import org.joml.Vector2f;
  *
  * @author Andrew_2
  */
-public class StandardCollision2D {
+public class Standard2DCollisionFilter implements CollisionFilter {
     
+    @Override
     public CollisionData2D collide(Collider primary, Collider secondary) {
         if(primary instanceof AABB2D && secondary instanceof AABB2D) {
             return collideAABB2D_AABB2D((AABB2D)primary, (AABB2D)secondary);

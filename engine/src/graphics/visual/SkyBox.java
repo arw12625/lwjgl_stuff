@@ -15,6 +15,7 @@ import graphics.View;
 import graphics.util.GraphicsUtility;
 import graphics.util.RenderableAdapter;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
@@ -32,52 +33,21 @@ public class SkyBox extends RenderableAdapter {
     UniformData ud;
     UniformTransform ut;
 
-    private static final float[] coords = {
-        -1.0f,-1.0f,-1.0f, 
-    -1.0f,-1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f, 
-    1.0f, 1.0f,-1.0f, 
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f, 
-    1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f};
+    private static final int[] cubeTriStripIndices = GraphicsUtility.getCubeTriStripIndices();
+    private static final float[] cubeVerts = GraphicsUtility.getCubeVerts();
     
-    private static final int numVert = coords.length / 3;
+    private static final int numVert = cubeTriStripIndices.length;
 
     public SkyBox(ShaderProgram shader) {
         this.shaderProgram = shader;
 
-        ByteBuffer coordData = BufferUtils.createByteBuffer(coords.length * 4);
-        coordData.asFloatBuffer().put(coords);
-        coordData.rewind();
+        ByteBuffer coordData = BufferUtils.createByteBuffer(numVert * 3 * Float.BYTES);
+        FloatBuffer floatView = coordData.asFloatBuffer();
+        //iterate in reverse for as normals are inverted
+        for(int i = cubeTriStripIndices.length - 1; i >= 0; i--) {
+            int index = cubeTriStripIndices[i];
+            floatView.put(cubeVerts[3*index]).put(cubeVerts[3*index+1]).put(cubeVerts[3*index+2]);
+        }
         
         vao = new VAOAttributes(shaderProgram.getRenderManager());
         attr = AttributeData.createAttributeData(vao, "static", GL15.GL_DYNAMIC_DRAW);
@@ -115,10 +85,8 @@ public class SkyBox extends RenderableAdapter {
         
         shaderProgram.useShaderProgram();
 
-        GL11.glDisable(GL11.GL_CULL_FACE);
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numVert);
         GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glEnable(GL11.GL_CULL_FACE);
     }
 }

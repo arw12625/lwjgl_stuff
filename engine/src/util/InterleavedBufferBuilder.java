@@ -100,7 +100,7 @@ public class InterleavedBufferBuilder implements Bufferable {
     }
 
     @Override
-    public int getSize() {
+    public int getBytes() {
         return capacity;
     }
     

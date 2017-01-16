@@ -142,7 +142,7 @@ public class TexturedParticleEmitter extends ParticleEmitter {
         }
 
         @Override
-        public int getSize() {
+        public int getBytes() {
             return (1+3+2)*Float.BYTES;
         }
         

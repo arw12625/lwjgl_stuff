@@ -22,6 +22,7 @@ public class Transform implements HasTransform {
     private final Matrix4f matrix;
 
     private boolean isStale;
+    private boolean autoRefresh;
 
     private static final Vector3f unitScale = new Vector3f(1, 1, 1);
 
@@ -31,6 +32,7 @@ public class Transform implements HasTransform {
         orientation = new Quaternionf();
         matrix = new Matrix4f();
         this.isStale = true;
+        this.autoRefresh = true;
     }
 
     public Transform(Vector3f position) {
@@ -47,24 +49,37 @@ public class Transform implements HasTransform {
         this(position, orientation);
         this.scale.set(scale);
     }
-
-    public Transform(Transform t) {
-        this(t.getPosition(), t.getOrientation(), t.getScale());
+    public Transform(HasTransform t) {
+        this();
+        set(t);
     }
 
-    public void stale() {
+    public void setAutoRefresh(boolean autoRefresh) {
+        this.autoRefresh = autoRefresh;
+    }
+    
+    public boolean isAutoRefresh() {
+        return autoRefresh;
+    }
+    
+    public boolean isStale() {
+        return isStale;
+    }
+    
+    protected void stale() {
         isStale = true;
     }
 
-    public void set(Transform t) {
-        setPosition(t.getPosition());
-        setOrientation(t.getOrientation());
-        setScale(t.getScale());
+    public void set(HasTransform t) {
+        t.getPosition(position);
+        t.getOrientation(orientation);
+        t.getScale(scale);
+        stale();
     }
 
     @Override
-    public Vector3f getPosition() {
-        return new Vector3f(position);
+    public Vector3f getPosition(Vector3f dest) {
+        return dest.set(position);
     }
 
     public void setPosition(Vector3f position) {
@@ -73,8 +88,8 @@ public class Transform implements HasTransform {
     }
 
     @Override
-    public Vector3f getScale() {
-        return new Vector3f(scale);
+    public Vector3f getScale(Vector3f dest) {
+        return dest.set(scale);
     }
 
     public void setScale(Vector3f scale) {
@@ -83,8 +98,8 @@ public class Transform implements HasTransform {
     }
 
     @Override
-    public Quaternionf getOrientation() {
-        return new Quaternionf(orientation);
+    public Quaternionf getOrientation(Quaternionf dest) {
+        return dest.set(orientation);
     }
 
     public void setOrientation(Quaternionf orientation) {
@@ -107,7 +122,7 @@ public class Transform implements HasTransform {
         stale();
     }
 
-    private void refresh() {
+    public void refreshTransform() {
         if (isStale) {
             orientation.get(matrix);
             matrix.scale(scale);
@@ -115,11 +130,14 @@ public class Transform implements HasTransform {
             isStale = false;
         }
     }
+    
+    @Override
+    public Matrix4f getTransformationMatrix(Matrix4f dest) {
+        if(autoRefresh) {
+            refreshTransform();
+        }
 
-    public Matrix4f getTransformationMatrix() {
-        refresh();
-
-        return new Matrix4f(matrix);
+        return dest.set(matrix);
     }
 
     public static Transform createTransform(Matrix4f mat) {

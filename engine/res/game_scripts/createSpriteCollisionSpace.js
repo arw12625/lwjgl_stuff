@@ -3,7 +3,7 @@ function create(capacity, lighting, layer) {
     var spriteScript = scriptManager.loadScript("game_scripts/createSprite3DCollection.js").getScriptObject();
     var spriteCollection = spriteScript.createCollection(capacity, lighting, layer);
     
-    var collisionSpace = new geometry.StandardCollisionSpace2D(new geometry.StandardCollision2D());
+    var collisionSpace = new geometry.StandardCollisionSpace(new geometry.Standard2DCollisionFilter());
     var printResponse = new geometry.PrintResponse();
 
     var blockTex = "misc_models/0.png";

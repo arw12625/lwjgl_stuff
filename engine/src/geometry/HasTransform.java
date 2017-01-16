@@ -9,8 +9,10 @@ import org.joml.Vector3f;
  * @author Andrew_2
  */
 public interface HasTransform {
-    public Vector3f getPosition();
-    public Quaternionf getOrientation();
-    public Vector3f getScale();
-    public Matrix4f getTransformationMatrix();
+    public Vector3f getPosition(Vector3f dest);
+    public Quaternionf getOrientation(Quaternionf dest);
+    public Vector3f getScale(Vector3f dest);
+    public default Matrix4f getTransformationMatrix(Matrix4f dest) {
+        return util.Utilities.getTransformationMatrix(this, dest);
+    }
 }

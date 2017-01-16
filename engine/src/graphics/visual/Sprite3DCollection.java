@@ -73,7 +73,7 @@ public class Sprite3DCollection extends RenderableAdapter {
         }
         
         @Override
-        public int getSize() {
+        public int getBytes() {
             return BYTES_PER_SPRITE;
         }
         

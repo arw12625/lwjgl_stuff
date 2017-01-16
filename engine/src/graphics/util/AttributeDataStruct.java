@@ -98,7 +98,7 @@ public class AttributeDataStruct extends AttributeData {
                 
             }
             
-            groupingOffset += groupings.get(i).getSize();
+            groupingOffset += groupings.get(i).getBytes();
         }
         capacity = groupingOffset;
         ByteBuffer adsData = BufferUtils.createByteBuffer(capacity);

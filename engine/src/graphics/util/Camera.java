@@ -12,7 +12,7 @@ import org.joml.Vector3f;
  */
 public class Camera implements HasTransform {
     //all matrices are dervied from transform
-    private final TransformReset transform;
+    private final Transform transform;
     private final Matrix4f viewMatrix;
     private final Matrix4f projectionMatrix;
     private final Matrix4f projectionViewMatrix;
@@ -23,7 +23,8 @@ public class Camera implements HasTransform {
         viewMatrix = new Matrix4f();
         projectionMatrix = new Matrix4f();
         projectionViewMatrix = new Matrix4f();
-        transform = new TransformReset();
+        transform = new Transform();
+        transform.setAutoRefresh(false);
         staleProjection();
     }
     
@@ -45,7 +46,7 @@ public class Camera implements HasTransform {
     
     public void moveLocalCoords(float x, float y, float z) {
         Vector3f v = new Vector3f(x, y, z);
-        transform.getOrientation().transform(v);
+        transform.getOrientation(new Quaternionf()).transform(v);
         transform.translate(v);
     }
 
@@ -55,9 +56,9 @@ public class Camera implements HasTransform {
 
     //for now we ignore the scale of the transform
     private void refresh() {
-        if(!transform.isReset()) {
-            viewMatrix.set(transform.getTransformationMatrix()).invert();
-            transform.reset();
+        if(transform.isStale()) {
+            transform.getTransformationMatrix(viewMatrix).invert();
+            transform.refreshTransform();
             staleProjection();
         }
         if(isProjectionStale) {
@@ -67,23 +68,23 @@ public class Camera implements HasTransform {
     }
 
     @Override
-    public Vector3f getPosition() {
-        return transform.getPosition();
+    public Vector3f getPosition(Vector3f dest) {
+        return transform.getPosition(dest);
     }
     
     @Override
-    public Quaternionf getOrientation() {
-        return transform.getOrientation();
+    public Quaternionf getOrientation(Quaternionf dest) {
+        return transform.getOrientation(dest);
     }
 
     @Override
-    public Vector3f getScale() {
-        return transform.getScale();
+    public Vector3f getScale(Vector3f dest) {
+        return transform.getScale(dest);
     }
     
     @Override
-    public Matrix4f getTransformationMatrix() {
-        return transform.getTransformationMatrix();
+    public Matrix4f getTransformationMatrix(Matrix4f dest) {
+        return transform.getTransformationMatrix(dest);
     }
     
     public void setPosition(float x, float y, float z) {
@@ -99,9 +100,7 @@ public class Camera implements HasTransform {
     }
     
     public void setYXAngle(float x, float y) {
-        transform.setOrientation(transform
-                .getOrientation()
-                .identity()
+        transform.setOrientation(new Quaternionf()
                 .rotateY(y)
                 .rotateX(x));
     }
@@ -146,27 +145,6 @@ public class Camera implements HasTransform {
     public Matrix4f getProjectionViewMatrix() {
         refresh();
         return new Matrix4f(projectionViewMatrix);
-    }
-    
-    private static class TransformReset extends Transform {
-
-        private boolean isReset;
-        
-        
-        @Override
-        public void stale() {
-            isReset = false;
-            super.stale();
-        }
-        
-        public boolean isReset() {
-            return isReset;
-        }
-        
-        public void reset() {
-            isReset = true;
-        }
-        
     }
 
 }

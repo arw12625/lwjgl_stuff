@@ -9,7 +9,8 @@ function createCamera() {
     var mouseSpeedY = -0.01;
 
     var camera = new graphicsUtil.Camera();
-    camera.setPespectiveProjection(3.14 / 3, 1.333, .1, 100);
+    var aspectRatio = renderManager.getWindowWidth() / renderManager.getWindowHeight();
+    camera.setPespectiveProjection(3.14 / 3, aspectRatio, .1, 100);
 
     var keys = new KeyCallbackExtender({
         invokeKey: function (window, key, scancode, action, mods) {
@@ -77,7 +78,6 @@ function createCamera() {
         }
         camera.setYXAngle(mx, my);
 
-        soundManager.setListenerPosition(camera.getPosition());
     }
     });
 
